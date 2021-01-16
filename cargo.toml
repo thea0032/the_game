@@ -1,0 +1,8 @@
+[package]
+name = "game_2"
+version = "0.0.2"
+authors = ["thea"]
+edition = "2018"
+
+[dependencies]
+rand = "0.8.0"
