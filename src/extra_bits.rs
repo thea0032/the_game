@@ -1,15 +1,16 @@
-
-pub fn fill<T>(len:usize, zero:T) -> Vec<T> where T:Copy{
-    let mut res:Vec<T> = vec![];
-    for _ in 0..len{
-        res.push(zero.clone());
+pub fn fill<T>(len: usize, zero: T) -> Vec<T>
+where
+    T: Copy, {
+    let mut res: Vec<T> = vec![];
+    for _ in 0..len {
+        res.push(zero);
     }
-    return res;
+    res
 }
-pub fn filter(mut input:usize, filter:&Vec<bool>) -> usize{
-    for i in 0..filter.len(){
-        if filter[i]{
-            if input == 0{
+pub fn filter(mut input: usize, filter: &Vec<bool>) -> usize {
+    for (i, item) in filter.iter().enumerate() {
+        if *item {
+            if input == 0 {
                 return i;
             }
             input -= 1;
