@@ -16,6 +16,7 @@ mod ui;
 mod instr;
 mod shape;
 mod file;
+mod constants;
 pub fn main(){
     init_file();
     let mut rss:ResourceDict = init::rss();

@@ -2,33 +2,33 @@ use std::str::FromStr;
 use std::io::{stdin,stdout,Write};
 
 use super::ansi;
+use crate::constants::*;
 
+/*
 
-const INTERACTIVE:bool = false;//If this is false, we're in play mode. If this is true, we're in record mode (records your input). 
-
-pub const PATH:&str = "stuff";
-pub const PATH2:&str = "stuff2";
+*/
 pub fn get_str(msg:&str) -> String{
-    if !INTERACTIVE{
-        let output = read_in();
-        if output != ""{
-            return output;
+    print!("{}", msg);//Prints out the message
+    let _ = stdout().flush();//Flushes output
+    if !INTERACTIVE{//If we aren't in interactive mode...
+        let output = read_in();//Reads input from the file
+        if output != ""{//If the line isn't empty...
+            return output;//Returns the output read
         }
     }
-    let mut s = String::new();
-    print!("{}", msg);
-    let _=stdout().flush();
-    stdin().read_line(&mut s).expect("Something went horribly wrong!");
+    let mut s = String::new();//Initializes string
+    stdin().read_line(&mut s).expect("Something went horribly wrong!");//Reads the line
     if let Some('\n')=s.chars().next_back() {
-        s.pop();
+        s.pop();//Removes newline character
     }
     if let Some('\r')=s.chars().next_back() {
-        s.pop();
+        s.pop();//Removes carriage return character
     }
-    if INTERACTIVE{
-        write_out(&s);
+    if INTERACTIVE{//If we're in interactive mode...
+        write_out(&s);//Record input
     }
-    return s;
+    refresh();//Refreshes stuff
+    return s;//Returns the string
 }
 pub fn read_in() -> String{
     let mut read = crate::file::read_file(PATH.to_string());//Reads the entire file
@@ -69,12 +69,8 @@ pub fn init(){//Runs at the start
 pub fn wait_for_input(msg:&str){
     get_str(msg);
 }//Waits for the user to enter something, and throws it away. 
-const DEBUG:bool = true;
-pub fn refresh(){
+fn refresh(){
     println!("{}", ansi::RESET);//We don't want any lingering colors!
-    if DEBUG{
-        return;//Doesn't print 100 lines if we're in debug mode. 
-    }
     for _ in 0..100{
         println!("");//Prints 100 empty lines to make things look really nice. 
     }

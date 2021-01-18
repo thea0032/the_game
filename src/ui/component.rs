@@ -4,7 +4,6 @@ use crate::{component::*, resources::*, object::*};
 use super::ansi;
 
 pub fn select_components_unfiltered(cmp:&Components) -> Option<(ComponentID, usize)>{
-    refresh();
     println!("{}", cmp.display());//Displays all possible components
     println!("{}{}. Quit{}", ansi::RED, &cmp.len(), ansi::RESET);//Quit option
     let input:usize = get_from_input_valid("Enter the component you want: ", "Please enter a valid id", |x| x <= &cmp.len());//Gets component
@@ -15,7 +14,6 @@ pub fn select_components_unfiltered(cmp:&Components) -> Option<(ComponentID, usi
     return Some((ComponentID::new(input), amt));//Returns result
 }//Returns a component, and an amount to install from input. None if aborted. 
 pub fn select_component_unfiltered(cmp:&Components) -> Option<ComponentID>{
-    refresh();
     println!("{}", cmp.display());
     println!("{}{}. Quit{}", ansi::RED, &cmp.len(), ansi::RESET);
     let input:usize = get_from_input_valid("Enter the component you want: ", "Please enter a valid id", |x| x <= &cmp.len());
@@ -25,7 +23,6 @@ pub fn select_component_unfiltered(cmp:&Components) -> Option<ComponentID>{
     return Some(ComponentID::new(input));
 }//Returns a component. None if aborted. 
 pub fn select_components_filtered(cmp:&mut Components, v:&Vec<usize>) -> Option<(ComponentID, usize)>{
-    refresh();
     let is_included:Vec<bool> = v.iter().map(|x| x != &0).collect();//Maps whether each option is displayed
     let len = is_included.iter().filter(|x| **x).count();//The amount of options displayed
     println!("{}", cmp.display_contained(&v));//Displays the options
@@ -39,17 +36,14 @@ pub fn select_components_filtered(cmp:&mut Components, v:&Vec<usize>) -> Option<
     return Some((ComponentID::new(input), amt));//Returns a value
 }
 pub fn details(rss:&ResourceDict, cmp:&mut Components){
-    refresh();
     println!("{}", cmp.display_detailed(rss));//Displays helpful stuff
     wait_for_input("Press enter to continue:");//So you can see everything
 }
 pub fn add_component(cmp:&mut Components, obj:&mut Object){
-    refresh();
     let amts:Vec<usize> = cmp.list.iter().map(|x| obj.resources().amt_contained(x.cost())).collect();//Gets amount of components you can afford
     let component = select_components_filtered(cmp, &amts);//Gets a component that you can afford
     if let Some(component) = component{
         let amt_success = obj.install_components(component.0, cmp, component.1);//Attempts to install components. 
-        refresh();
         println!("{} components successfully installed!", amt_success);//Tells you how many successes there are
     } else {
         println!("Component installation aborted!");
@@ -57,11 +51,9 @@ pub fn add_component(cmp:&mut Components, obj:&mut Object){
     wait_for_input("Press enter to continue:");//Makes sure that you can see the message
 }
 pub fn remove_component(cmp:&mut Components, obj:&mut Object){
-    refresh();
     let component = select_components_filtered(cmp, obj.get_cmp_amts());//Gets a component that you currently have
     if let Some(component) = component{//If you didn't abort...
         let amt_success = obj.remove_components(component.0, cmp, component.1);//Attempts to remove components. 
-        refresh();
         println!("{} components successfully removed!", amt_success);//Tells you how many successes there were
     } else {
         println!("Component removal aborted!");
