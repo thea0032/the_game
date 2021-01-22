@@ -1,0 +1,77 @@
+Date : 2021-01-18 17:28:36
+Directory : c:\Users\ilike\Projects\Rust\game_2
+Total : 42 files,  3609 codes, 241 comments, 115 blanks, all 3965 lines
+
+Languages
++----------+------------+------------+------------+------------+------------+
+| language | files      | code       | comment    | blank      | total      |
++----------+------------+------------+------------+------------+------------+
+| Rust     |         38 |      3,540 |        241 |         91 |      3,872 |
+| Markdown |          1 |         58 |          0 |         23 |         81 |
+| TOML     |          2 |          9 |          0 |          1 |         10 |
+| todo     |          1 |          2 |          0 |          0 |          2 |
++----------+------------+------------+------------+------------+------------+
+
+Directories
++-----------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                            | files      | code       | comment    | blank      | total      |
++-----------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                               |         42 |      3,609 |        241 |        115 |      3,965 |
+| src                                                             |         38 |      3,540 |        241 |         91 |      3,872 |
+| src\component                                                   |          4 |        666 |         57 |         13 |        736 |
+| src\instr                                                       |          2 |        544 |         87 |          5 |        636 |
+| src\object                                                      |          4 |        269 |         21 |         10 |        300 |
+| src\resources                                                   |          3 |        335 |         21 |          7 |        363 |
+| src\system                                                      |          1 |         85 |          2 |          2 |         89 |
+| src\systems                                                     |          4 |        140 |          2 |          4 |        146 |
+| src\ui                                                          |         13 |      1,184 |         47 |         36 |      1,267 |
++-----------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++-----------------------------------------------------------------+----------+------------+------------+------------+------------+
+| filename                                                        | language | code       | comment    | blank      | total      |
++-----------------------------------------------------------------+----------+------------+------------+------------+------------+
+| c:\Users\ilike\Projects\Rust\game_2\TODO.todo                   | todo     |          2 |          0 |          0 |          2 |
+| c:\Users\ilike\Projects\Rust\game_2\cargo.toml                  | TOML     |          7 |          0 |          1 |          8 |
+| c:\Users\ilike\Projects\Rust\game_2\rssheader.md                | Markdown |         58 |          0 |         23 |         81 |
+| c:\Users\ilike\Projects\Rust\game_2\rustfmt.toml                | TOML     |          2 |          0 |          0 |          2 |
+| c:\Users\ilike\Projects\Rust\game_2\src\component\accessible.rs | Rust     |        172 |         24 |          2 |        198 |
+| c:\Users\ilike\Projects\Rust\game_2\src\component\init.rs       | Rust     |        115 |         19 |          5 |        139 |
+| c:\Users\ilike\Projects\Rust\game_2\src\component\mod.rs        | Rust     |        228 |          5 |          2 |        235 |
+| c:\Users\ilike\Projects\Rust\game_2\src\component\recipe.rs     | Rust     |        151 |          9 |          4 |        164 |
+| c:\Users\ilike\Projects\Rust\game_2\src\constants.rs            | Rust     |          3 |          1 |          1 |          5 |
+| c:\Users\ilike\Projects\Rust\game_2\src\extra_bits.rs           | Rust     |         20 |          0 |          1 |         21 |
+| c:\Users\ilike\Projects\Rust\game_2\src\file.rs                 | Rust     |         42 |          1 |          4 |         47 |
+| c:\Users\ilike\Projects\Rust\game_2\src\init.rs                 | Rust     |        153 |          2 |          1 |        156 |
+| c:\Users\ilike\Projects\Rust\game_2\src\instr\condition.rs      | Rust     |         19 |          1 |          1 |         21 |
+| c:\Users\ilike\Projects\Rust\game_2\src\instr\mod.rs            | Rust     |        525 |         86 |          4 |        615 |
+| c:\Users\ilike\Projects\Rust\game_2\src\location.rs             | Rust     |         29 |          0 |          1 |         30 |
+| c:\Users\ilike\Projects\Rust\game_2\src\main.rs                 | Rust     |         28 |          0 |          3 |         31 |
+| c:\Users\ilike\Projects\Rust\game_2\src\object\component.rs     | Rust     |        119 |         14 |          2 |        135 |
+| c:\Users\ilike\Projects\Rust\game_2\src\object\display.rs       | Rust     |         18 |          0 |          2 |         20 |
+| c:\Users\ilike\Projects\Rust\game_2\src\object\mod.rs           | Rust     |         52 |          0 |          1 |         53 |
+| c:\Users\ilike\Projects\Rust\game_2\src\object\tick.rs          | Rust     |         80 |          7 |          5 |         92 |
+| c:\Users\ilike\Projects\Rust\game_2\src\resources\constants.rs  | Rust     |         20 |          2 |          2 |         24 |
+| c:\Users\ilike\Projects\Rust\game_2\src\resources\dict.rs       | Rust     |         31 |          0 |          1 |         32 |
+| c:\Users\ilike\Projects\Rust\game_2\src\resources\mod.rs        | Rust     |        284 |         19 |          4 |        307 |
+| c:\Users\ilike\Projects\Rust\game_2\src\shape.rs                | Rust     |         42 |          0 |          3 |         45 |
+| c:\Users\ilike\Projects\Rust\game_2\src\system\mod.rs           | Rust     |         85 |          2 |          2 |         89 |
+| c:\Users\ilike\Projects\Rust\game_2\src\systems\mod.rs          | Rust     |         95 |          2 |          1 |         98 |
+| c:\Users\ilike\Projects\Rust\game_2\src\systems\object_id.rs    | Rust     |         12 |          0 |          1 |         13 |
+| c:\Users\ilike\Projects\Rust\game_2\src\systems\system_id.rs    | Rust     |         12 |          0 |          1 |         13 |
+| c:\Users\ilike\Projects\Rust\game_2\src\systems\tick.rs         | Rust     |         21 |          0 |          1 |         22 |
+| c:\Users\ilike\Projects\Rust\game_2\src\ui\ansi.rs              | Rust     |         25 |          2 |          7 |         34 |
+| c:\Users\ilike\Projects\Rust\game_2\src\ui\component.rs         | Rust     |         86 |          7 |          3 |         96 |
+| c:\Users\ilike\Projects\Rust\game_2\src\ui\condition.rs         | Rust     |          4 |          0 |          2 |          6 |
+| c:\Users\ilike\Projects\Rust\game_2\src\ui\instr.rs             | Rust     |        477 |         10 |          3 |        490 |
+| c:\Users\ilike\Projects\Rust\game_2\src\ui\io.rs                | Rust     |         97 |         16 |          3 |        116 |
+| c:\Users\ilike\Projects\Rust\game_2\src\ui\location.rs          | Rust     |         13 |          0 |          3 |         16 |
+| c:\Users\ilike\Projects\Rust\game_2\src\ui\mod.rs               | Rust     |         29 |          0 |          1 |         30 |
+| c:\Users\ilike\Projects\Rust\game_2\src\ui\object.rs            | Rust     |        144 |          2 |          2 |        148 |
+| c:\Users\ilike\Projects\Rust\game_2\src\ui\quickie.rs           | Rust     |         86 |          6 |          3 |         95 |
+| c:\Users\ilike\Projects\Rust\game_2\src\ui\rand.rs              | Rust     |          8 |          3 |          1 |         12 |
+| c:\Users\ilike\Projects\Rust\game_2\src\ui\recipe.rs            | Rust     |         78 |          0 |          4 |         82 |
+| c:\Users\ilike\Projects\Rust\game_2\src\ui\resources.rs         | Rust     |         59 |          1 |          2 |         62 |
+| c:\Users\ilike\Projects\Rust\game_2\src\ui\system.rs            | Rust     |         78 |          0 |          2 |         80 |
+| Total                                                           |          |      3,609 |        241 |        115 |      3,965 |
++-----------------------------------------------------------------+----------+------------+------------+------------+------------+

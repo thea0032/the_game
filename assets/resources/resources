@@ -1,0 +1,40 @@
+Energy
+    move cost: 0,         
+Water
+    move cost: 1,
+Air
+    move cost: 1,         
+Ore
+    move cost: 1,         
+uranium
+    move cost: 4,         
+Biomass
+    move cost: 5,         
+Food
+    move cost: 1,         
+Metal
+    move cost: 1,         
+Population
+    move cost: 10,        
+Luxuries
+    move cost: 1,         
+Production
+    move cost: 1,         
+Transfer
+    move cost: 0,         
+Fuel
+    move cost: 1,         
+Movement
+    move cost: MAX, 
+Space
+    move cost: MAX, 
+Living space
+    move cost: MAX, 
+Mass
+    move cost: MAX, 
+Mining jobs
+    move cost: MAX, 
+Uranium mining jobs
+    move cost: MAX, 
+Factory jobs
+    move cost: MAX, 
