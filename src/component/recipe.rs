@@ -1,5 +1,3 @@
-
-
 use crate::{
     extra_bits,
     resources::{constants as rscnst, ResourceDict, ResourceID},
@@ -15,22 +13,22 @@ impl Recipe {
             cost: extra_bits::fill(len, 0),
         }
     }
-    pub fn cost(& mut self) -> & mut Vec<i64> {
+    pub fn cost(&mut self) -> &mut Vec<i64> {
         &mut self.cost
     }
-    pub fn cost_stat(& self) -> & Vec<i64> {
+    pub fn cost_stat(&self) -> &Vec<i64> {
         &self.cost
     }
     pub fn display(&self, rss: &ResourceDict) -> String {
-        let mut positives = vec![];
-        let mut negatives = vec![];
+        let mut positives = Vec::new();
+        let mut negatives = Vec::new();
         for (i, item) in self.cost.iter().enumerate() {
-            match item.cmp(&0){
-                std::cmp::Ordering::Equal=>{},
-                std::cmp::Ordering::Greater=>{
+            match item.cmp(&0) {
+                std::cmp::Ordering::Equal => {}
+                std::cmp::Ordering::Greater => {
                     positives.push(i);
-                },
-                std::cmp::Ordering::Less=>{
+                }
+                std::cmp::Ordering::Less => {
                     negatives.push(i);
                 }
             }
@@ -53,7 +51,7 @@ impl Recipe {
         if n_len != 0 {
             res.push_str("Gains: ");
             for line in negatives {
-                res.push_str(&(- self.cost[line]).to_string());
+                res.push_str(&(-self.cost[line]).to_string());
                 res.push(' ');
                 res.push_str(&rss.get(ResourceID::new(line)));
                 res.push(',');

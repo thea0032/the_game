@@ -7,45 +7,45 @@ use crate::{
     ui::{object::*, *},
 };
 use crate::{instr::Directions, systems::system_id::SystemID, ui::io::*};
-const EXTRA_OPTIONS_SYS: usize = 3; //The amount of extra options
 pub fn system_menu(
     rss: &ResourceDict,
     cmp: &mut Components,
     sys: &mut Systems,
     system: SystemID,
     dir: &mut Directions,
+    cfg: &mut Config,
 ) {
     loop {
         println!("Viewing {}", sys.get_s_name(system));
         print!("{}", ansi::GREEN);
-        println!("0. End turn; wait a tick");
+        println!("{}. End turn; wait a tick", cfg.tick());
         println!("{}", ansi::YELLOW);
-        println!("1. Go back");
-        println!("2. Create an object");
+        println!("{}. Go back", cfg.back());
+        println!("{}. Create a new object", cfg.new());
         println!("{}", ansi::CYAN);
         println!(
             "{}",
             sys.get_s_stat(system)
-                .display(EXTRA_OPTIONS_SYS, sys.get_o_names(), sys)
+                .display(sys.get_o_names(), sys)
         );
         print!("{}", ansi::RESET); //Print statements are self-explanatory
-        let len = sys.get_s(system).len() + EXTRA_OPTIONS_SYS;
-        let response = get_from_input_valid("", "Please enter a valid input.", |x| x < &len); //Gets your response
+        let response:SysRes = get_from_input_valid("", "Please enter a valid input.", cfg, |x:&SysRes| x.in_bounds(&sys.get_s_stat(system).len())); //Gets your response
         match response {
-            0 => sys.tick(rss, cmp, dir), //If it's zero, we tick
-            1 => break,                   //If it's 1, goes back to the system menu
-            2 => make_object(rss, cmp, sys, dir, system),
-            _ => object_menu(
+            SysRes::Tick => sys.tick(rss, cmp, dir), //If it's zero, we tick
+            SysRes::Exit => break,                   //If it's 1, goes back to the system menu
+            SysRes::New => make_object(rss, cmp, sys, dir, system, cfg),
+            SysRes::System(val) => object_menu(
                 rss,
                 cmp,
                 sys,
-                ObjectID::new(response - EXTRA_OPTIONS_SYS),
+                ObjectID::new(val),
                 dir,
+                cfg,
             ),
         };
     }
 }
-pub fn select_object_filtered(sys: &Systems, id: SystemID, filter: Vec<bool>) -> ObjectID {
+pub fn select_object_filtered(sys: &Systems, id: SystemID, filter: Vec<bool>, cfg:&mut Config) -> ObjectID {
     println!(
         "{}",
         sys.get_s_stat(id)
@@ -55,11 +55,12 @@ pub fn select_object_filtered(sys: &Systems, id: SystemID, filter: Vec<bool>) ->
     let input: usize = get_from_input_valid(
         "Enter the object you want: ",
         "Please enter a valid id",
+        cfg,
         |x| x < &len,
     );
     sys.get_s_stat(id).get_objs()[crate::extra_bits::filter(input, &filter)]
 }
-pub fn select_object_docked(sys: &Systems, id: ObjectID) -> ObjectID {
+pub fn select_object_docked(sys: &Systems, id: ObjectID, cfg:&mut Config) -> ObjectID {
     let curr_system_id = sys.get_o_sys(id);
     let curr_location = *sys.get_o_stat(id).get_location_stat();
     let filter: Vec<bool> = sys
@@ -67,13 +68,49 @@ pub fn select_object_docked(sys: &Systems, id: ObjectID) -> ObjectID {
         .iter()
         .map(|x| x.get_location_stat().eq(&curr_location))
         .collect();
-    select_object_filtered(sys, curr_system_id, filter)
+    select_object_filtered(sys, curr_system_id, filter, cfg)
 }
-pub fn get_system(sys: &Systems) -> SystemID {
-    println!("{}", sys.display(0));
+pub fn get_system(sys: &Systems, cfg:&mut Config) -> SystemID {
+    println!("{}", sys.display());
     SystemID::new(get_from_input_valid(
         "Enter the system you want",
         "Please enter a valid number",
+        cfg,
         |x| x < &sys.len(),
     ))
+}
+
+pub enum SysRes{
+    System(usize),
+    Tick,
+    Exit,
+    New,
+}
+impl FromString for SysRes{
+    fn from_string(s: &str, cfg:&mut Config) -> Option<Self> {
+        if s == cfg.tick() {
+            return Some(SysRes::Tick);
+        } else if s == cfg.back() {
+            return Some(SysRes::Exit);
+        } else if s == cfg.new() {
+            return Some(SysRes::New);
+        } else if let Ok(val) = usize::from_str(s){
+            return Some(SysRes::System(val));
+        } else {
+            return None;
+        }
+    }
+    fn from_string_s(_:&str) -> Option<Self>
+    where Self:Sized {
+        None
+    }
+}
+impl InBounds for SysRes{
+    fn in_bounds(&self, bounds:&usize) -> bool {
+        if let SysRes::System(val) = self{
+            return val < bounds;
+        } else {
+            return true;
+        }
+    }
 }

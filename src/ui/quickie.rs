@@ -5,10 +5,7 @@ use crate::{
     systems::{object_id::ObjectID, Systems},
 };
 
-use super::{
-    ansi, instr,
-    io::{get_from_input_valid, wait_for_input},
-};
+use super::{ansi, instr, io::{Config, get_from_input_valid, wait_for_input}};
 
 pub fn quickie(
     rss: &ResourceDict,
@@ -16,6 +13,7 @@ pub fn quickie(
     sys: &mut Systems,
     dir: &mut Quickie,
     obj: ObjectID,
+    cfg:&mut Config
 ) {
     loop {
         print!("{}", ansi::GREEN);
@@ -26,7 +24,7 @@ pub fn quickie(
         let len = 4;
         println!("{}", dir.display(len, obj, sys, rss, cmp)); //Displays options
         let input: usize =
-            get_from_input_valid("", "Please enter a valid input", |x| *x < len + dir.len()); //Gets option
+            get_from_input_valid("", "Please enter a valid input", cfg, |x| *x < len + dir.len()); //Gets option
         match input {
             0 => break, //Breaks out of menu
             1 => {
@@ -35,9 +33,10 @@ pub fn quickie(
                 let pos = get_from_input_valid(
                     "Enter the place where you want to add an instruction",
                     "Please enter a valid number!",
+                    cfg,
                     |x| *x <= dir.len(),
                 ); //Gets position
-                let instr = instr::make_instr(rss, cmp, sys, obj, dir.len() + 1); //Gets instruction
+                let instr = instr::make_instr(rss, cmp, sys, obj, dir.len() + 1, cfg); //Gets instruction
                 if let Some(val) = instr {
                     //If the instruction creation wasn't aborted
                     dir.ins(pos, val, false); //Inserts it
@@ -45,7 +44,7 @@ pub fn quickie(
                 } else {
                     println!("{}Instruction insertion aborted!", ansi::RED); //Aborts
                 }
-                wait_for_input("Press enter to continue: "); //Waits for input
+                wait_for_input("Press enter to continue: ", cfg); //Waits for input
             }
             2 => {
                 println!("{}", dir.display(0, obj, sys, rss, cmp));
@@ -53,16 +52,17 @@ pub fn quickie(
                 let pos = get_from_input_valid(
                     "Enter the place where you want to add an instruction",
                     "Please enter a valid number!",
+                    cfg,
                     |x| *x <= dir.len(),
                 );
-                let instr = instr::make_instr(rss, cmp, sys, obj, dir.len() + 1);
+                let instr = instr::make_instr(rss, cmp, sys, obj, dir.len() + 1, cfg);
                 if let Some(val) = instr {
                     dir.ins(pos, val, true);
                     println!("{}Instruction insertion successful!", ansi::GREEN);
                 } else {
                     println!("{}Instruction insertion aborted!", ansi::RED);
                 }
-                wait_for_input("Press enter to continue: "); //Same as before,
+                wait_for_input("Press enter to continue: ", cfg); //Same as before,
                                                              // but the instruction
                                                              // is temporary
             }
@@ -72,6 +72,7 @@ pub fn quickie(
                 let pos = get_from_input_valid(
                     "Enter the place where you want to remove an instruction: ",
                     "Please enter a valid number!",
+                    cfg,
                     |x| *x <= dir.len(),
                 ); //Gets input
                 if pos < dir.len() {
@@ -82,11 +83,11 @@ pub fn quickie(
                     //aborts
                     println!("{}Instruction removal aborted!", ansi::RED); //text
                 }
-                wait_for_input("Press enter to continue: "); //waits for input
+                wait_for_input("Press enter to continue: ", cfg); //waits for input
             }
             _ => {
                 let len = dir.len(); //Gets length
-                instr::instr_menu(rss, cmp, sys, obj, &mut dir.get(input - 4), len);
+                instr::instr_menu(rss, cmp, sys, obj, &mut dir.get(input - 4), len, cfg);
                 //Enters instruction menu
             }
         } //Responds to options

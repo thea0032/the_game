@@ -7,33 +7,33 @@ use crate::resources::*;
 use self::recipe::Recipe;
 #[derive(Clone, Debug)]
 pub struct Components {
-    pub list: Vec<Component>,        //list of all accessible components
-    pub names: Vec<String>,          //names of all accessible components
+    pub list: Vec<Component>, //list of all accessible components
+    pub names: Vec<String>,   //names of all accessible components
     pub hidden_list: Vec<Component>, /* list of all hidden components (hidden = can't install
-                                      * yourself) */
+                               * yourself) */
     pub hidden_names: Vec<String>, //names of all hidden components
     pub recipe_list: Vec<Recipe>,  //list of all recipes
     pub recipe_names: Vec<String>, //names of all recipes
 }
 impl Components {
-    pub fn get(& self, id: ComponentID) -> & Component {
+    pub fn get(&self, id: ComponentID) -> &Component {
         if !id.is_hidden {
             &self.list[id.id]
         } else {
             &self.hidden_list[id.id]
         }
     } //gets a component from the lists
-    pub fn get_r(& self, id: RecipeID) -> & Recipe {
+    pub fn get_r(&self, id: RecipeID) -> &Recipe {
         &self.recipe_list[id.id]
     } //gets a recipe from the list
-    pub fn get_name(& self, id: ComponentID) -> & String {
+    pub fn get_name(&self, id: ComponentID) -> &String {
         if !id.is_hidden {
             &self.names[id.id]
         } else {
             &self.hidden_names[id.id]
         }
     } //gets the component name from the lists
-    pub fn get_r_name(& self, id: RecipeID) -> & String {
+    pub fn get_r_name(&self, id: RecipeID) -> &String {
         &self.recipe_names[id.id]
     } //gets the recipe name from the list
     pub fn init(&mut self, rss: &ResourceDict) {
@@ -43,12 +43,12 @@ impl Components {
     } //initializes the components object from accessible.rs, init.rs, and recipe.rs
     pub fn new() -> Components {
         Components {
-            list: vec![],
-            names: vec![],
-            hidden_list: vec![],
-            hidden_names: vec![],
-            recipe_list: vec![],
-            recipe_names: vec![],
+            list: Vec::new(),
+            names: Vec::new(),
+            hidden_list: Vec::new(),
+            hidden_names: Vec::new(),
+            recipe_list: Vec::new(),
+            recipe_names: Vec::new(),
         }
     } //new function
     pub fn add_l(&mut self, mut name: Vec<String>, mut component: Vec<Component>) {
@@ -73,7 +73,7 @@ impl Components {
     } //displays the accessible components
     pub fn display_contained(&self, a: &Vec<usize>) -> String {
         let mut x: String = "".to_string();
-        let mut counter: usize = 0;  
+        let mut counter: usize = 0;
         for (i, item) in a.iter().enumerate() {
             if *item != 0 {
                 x.push_str(&format!("{}: {} ({})", counter, &self.names[i], item));
@@ -103,8 +103,8 @@ impl Components {
     }
     pub fn display_contained_r(&self, a: &Vec<usize>) -> String {
         let mut x: String = "".to_string();
-        let mut counter: usize = 0; 
-        for (i, item) in a.iter().enumerate(){
+        let mut counter: usize = 0;
+        for (i, item) in a.iter().enumerate() {
             if *item != 0 {
                 x.push_str(&format!(
                     "{}: {} ({})",
@@ -139,13 +139,13 @@ pub struct Component {
     cost: Vec<i64>,
 }
 impl Component {
-    pub fn cost(& self) -> & Vec<i64> {
+    pub fn cost(&self) -> &Vec<i64> {
         &self.cost
     }
-    pub fn surplus(& self) -> & Vec<i64> {
+    pub fn surplus(&self) -> &Vec<i64> {
         &self.surplus
     }
-    pub fn storage(& self) -> & Vec<u128> {
+    pub fn storage(&self) -> &Vec<u128> {
         &self.storage
     }
     pub fn change_cost(&mut self, id: ResourceID, val: i64) {
@@ -177,7 +177,7 @@ impl Component {
         T: Copy,
         T: ToString, {
         let mut x: String = "".to_string(); //Initializes rseult
-        let mut flag: bool = false; 
+        let mut flag: bool = false;
         for (i, item) in a.iter().enumerate() {
             //For every resource...
             if *item != zero {

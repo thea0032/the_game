@@ -11,14 +11,14 @@ use crate::{
 use crate::instr::condition::Condition;
 #[derive(Debug, Clone)]
 pub enum Instr {
-    Move(Location),                        //Move to a location.
-    Jump(SystemID),                        //Jump to another system.
-    Transfer(Vec<u128>, ObjectID),         /* Transfer resources to another object (moves to it
-                                            * first) */
-    MoveTo(ObjectID),                      //Moves to another object
+    Move(Location), //Move to a location.
+    Jump(SystemID), //Jump to another system.
+    Transfer(Vec<u128>, ObjectID), /* Transfer resources to another object (moves to it
+                     * first) */
+    MoveTo(ObjectID), //Moves to another object
     If(Condition, Box<Instr>, Box<Instr>), /* If the condition is true, evaluates the first
-                                            * condition. Otherwise, evaluates the second
-                                            * condition. */
+                       * condition. Otherwise, evaluates the second
+                       * condition. */
     All(Vec<Instr>), //Does all of these, in order, until a failure or delay.
     GoTo(InstrID),   //Moves to another position on the queue.
     PerformRecipe(RecipeID, usize), //Performs a recipe a certain number of times.
@@ -91,23 +91,23 @@ impl Instr {
             }
             Instr::GoTo(val) => {
                 InstrRes::Success(val.id) //We've succeeded, and we're
-                                                  // going to the location
-                                                  // specified by the
-                                                  // instruction!
+                                          // going to the location
+                                          // specified by the
+                                          // instruction!
             }
             Instr::If(val1, val2, val3) => {
                 if val1.eval(sys) {
                     //Evaluate the condition! If it's true...
                     val2.exe(obj, pos, sys, rss, cmp) //Execute the
-                                                              // first instruction
-                                                              // and return the
-                                                              // result.
+                                                      // first instruction
+                                                      // and return the
+                                                      // result.
                 } else {
                     //Otherwise...
                     val3.exe(obj, pos, sys, rss, cmp) //Execute the
-                                                              // second instruction
-                                                              // and return the
-                                                              // result.
+                                                      // second instruction
+                                                      // and return the
+                                                      // result.
                 }
             }
             Instr::All(val) => {
@@ -117,9 +117,9 @@ impl Instr {
                     match instr.exe(obj, pos, sys, rss, cmp) {
                         //Execute the instruction.
                         InstrRes::Fail(val) => return InstrRes::Fail(val), /* If it fails, return the result. */
-                        InstrRes::Continue => return InstrRes::Continue, /* If it's incomplete,
-                                                                           * return the result
-                                                                           * generated. */
+                        InstrRes::Continue => return InstrRes::Continue,   /* If it's incomplete, */
+                        // return the result
+                        // generated.
                         InstrRes::Success(val) => {
                             saved_pos = val;
                         } //If we've succeeded, store the value.
@@ -150,20 +150,19 @@ impl Instr {
                     //If we're already in the right system...
                     return InstrRes::Success(pos + 1); //Success!
                 }
-                InstrRes::Fail(
-                    "Jumping to another system hasn't been implemented yet!".to_string(),
-                ) //Jumping isn't implemented yet.
+                InstrRes::Fail("Jumping to another system hasn't been implemented yet!".to_string())
+                //Jumping isn't implemented yet.
             }
             Instr::MoveTo(val) => {
                 //Moves to another object.
                 match Instr::Jump(sys.get_o_sys(*val)).exe(obj, pos, sys, rss, cmp) {
                     //Starts by jumping to the system the object is in.
-                    InstrRes::Continue => return InstrRes::Continue, /* If it's in progress,
-                                                                       * return the result and
-                                                                       * wait. */
-                    InstrRes::Fail(val) => return InstrRes::Fail(val), /* If it failed, we
-                                                                         * return the same
-                                                                         * failure. */
+                    InstrRes::Continue => return InstrRes::Continue, /* If it's in progress, */
+                    // return the result and
+                    // wait.
+                    InstrRes::Fail(val) => return InstrRes::Fail(val), /* If it failed, we */
+                    // return the same
+                    // failure.
                     InstrRes::Success(_) => {} //If we succeeded, continue on.
                 }
                 Instr::Move(*sys.get_o(*val).get_location()).exe(obj, pos, sys, rss, cmp)
@@ -192,7 +191,7 @@ impl Instr {
             }
             Instr::Sticky => InstrRes::Continue, //Sticks to the instruction
             Instr::End => InstrRes::Success(pos + 1), //immediately advances
-            Instr::Fail => InstrRes::Fail("This instruction was supposed to fail.".to_string()) ,//Fails
+            Instr::Fail => InstrRes::Fail("This instruction was supposed to fail.".to_string()), /* Fails */
             Instr::PerformRecipe(recipe, amt) => {
                 //Performs a recipe.
                 let amt_success = sys.get_o(obj).do_recipes(*recipe, cmp, *amt); //Performs recipes, gets amount of successes.
@@ -338,10 +337,10 @@ impl Queue {
                 self.flag = Some(new); //If we've succeeded in an instruction, we place a flag down.
                 QueueRes::Continue //The queue isn't done yet.
             }
-            InstrRes::Continue => QueueRes::Continue, /* If the instruction isn't done, the
-                                                        * queue isn't done. */
-            InstrRes::Fail(val) => QueueRes::Fail(val), //If the instruction fails, the queue
-                                                        // fails.
+            InstrRes::Continue => QueueRes::Continue, /* If the instruction isn't done, the */
+            // queue isn't done.
+            InstrRes::Fail(val) => QueueRes::Fail(val), /*If the instruction fails, the queue
+                                                         * fails. */
         };
         if placeholder != self.curr {
             //If the current location changed...
@@ -468,7 +467,7 @@ impl Instrs {
         self.instrs.remove(index);
         self.names.remove(index);
     } //Removes a queue and name
-    pub fn get_queue(& mut self, id: usize) -> & mut Queue {
+    pub fn get_queue(&mut self, id: usize) -> &mut Queue {
         &mut self.instrs[id]
     } //Gets the queue based on the position
     pub fn len(&self) -> usize {
@@ -547,7 +546,7 @@ impl Quickie {
         cmp: &Components,
     ) -> String {
         let mut res: String = "".to_string(); //Initializes result
-        for (i, line) in self.dirs.iter().enumerate(){
+        for (i, line) in self.dirs.iter().enumerate() {
             res.push_str(&format!(
                 "{}{}. {}",
                 self.color(i),
@@ -579,7 +578,7 @@ impl Quickie {
     pub fn len(&self) -> usize {
         self.dirs.len()
     } //Returns the length
-    pub fn get(& mut self, i: usize) -> & mut Instr {
+    pub fn get(&mut self, i: usize) -> &mut Instr {
         &mut self.dirs[i]
     } //Gets a certain index
 }
@@ -594,21 +593,21 @@ impl Directions {
             quick: vec![],
         }
     } //Basic new function
-    pub fn directions(& mut self) -> & mut Vec<Instrs> {
+    pub fn directions(&mut self) -> &mut Vec<Instrs> {
         &mut self.directions
     }
     ///Returns directions
-    pub fn instrs(& mut self, id: ObjectID) -> & mut Instrs {
+    pub fn instrs(&mut self, id: ObjectID) -> &mut Instrs {
         &mut self.directions[id.get()]
     } //Returns instruction vector at a certain object id
     pub fn add_new(&mut self) {
         self.directions.push(Instrs::new());
         self.quick.push(Quickie::new());
     } //Adds a new instruction queue; corresponds with object creation
-    pub fn quickie(& mut self, id: ObjectID) -> & mut Quickie {
+    pub fn quickie(&mut self, id: ObjectID) -> &mut Quickie {
         &mut self.quick[id.get()]
     } //Returns the corresponding quick queue
-    pub fn quickies(& mut self) -> & mut Vec<Quickie> {
+    pub fn quickies(&mut self) -> &mut Vec<Quickie> {
         &mut self.quick
     } //Returns all of the quick queues.
 }

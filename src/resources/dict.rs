@@ -25,7 +25,7 @@ impl ResourceDict {
     pub fn get(&self, id: ResourceID) -> String {
         self.names[id.get()].clone()
     } //Returns the resource name
-    pub fn get_transfer_costs(& self) -> & Vec<u128> {
+    pub fn get_transfer_costs(&self) -> &Vec<u128> {
         &self.transfer_costs
     } //Returns all of the transfer costs
 }

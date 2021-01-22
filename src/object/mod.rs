@@ -34,19 +34,19 @@ impl Object {
             wait: 0,
         }
     } //Basic constructor
-    pub fn get_location(& mut self) -> & mut Location {
+    pub fn get_location(&mut self) -> &mut Location {
         &mut self.location
     } //Basic getter
-    pub fn get_location_stat(& self) -> & Location {
+    pub fn get_location_stat(&self) -> &Location {
         &self.location
     } //Basic getter, immutable
-    pub fn get_cmp_amts(& self) -> & Vec<usize> {
+    pub fn get_cmp_amts(&self) -> &Vec<usize> {
         &self.component_amounts
     } //Getter
-    pub fn resources(& self) -> &Resources {
+    pub fn resources(&self) -> &Resources {
         &self.resources
     } //Getter
-    pub fn resources_mut(& mut self) -> &mut Resources {
+    pub fn resources_mut(&mut self) -> &mut Resources {
         &mut self.resources
     } //Mutable getter
 }

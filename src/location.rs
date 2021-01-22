@@ -5,7 +5,7 @@ pub struct Location {
 }
 impl Location {
     pub fn new(x: f64, y: f64) -> Location {
-        Location {x, y}
+        Location { x, y }
     }
     pub fn close_enough(&self, other: &Location, required_distance: f64) -> bool {
         let calculation: f64 =

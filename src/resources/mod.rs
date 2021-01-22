@@ -26,9 +26,9 @@ impl Resources {
                 //If we have more resources than we have capacity for...
                 self.curr[i] = self.cap[i]; //Delete the extra resources
             }
-            if self.surplus[i] < 0 && self.curr[i] >= (- self.surplus[i]) as u128 {
+            if self.surplus[i] < 0 && self.curr[i] >= (-self.surplus[i]) as u128 {
                 //If we have a negative surplus, but we can still lose a few...
-                self.curr[i] -= (- self.surplus[i]) as u128; //Do it
+                self.curr[i] -= (-self.surplus[i]) as u128; //Do it
                 res.push(false); //We didn't run out of resources yet...
             } else if self.surplus[i] >= 0 {
                 //If we have positive (or zero) surplus...
@@ -43,7 +43,7 @@ impl Resources {
     pub fn get_curr(&self, id: ResourceID) -> u128 {
         self.curr[id.get()]
     } //Gets the current amount of this resource
-    pub fn get_currs(& self) -> & Vec<u128> {
+    pub fn get_currs(&self) -> &Vec<u128> {
         &self.curr
     } //Gets the current amounts of all resources
     pub fn get_cap(&self, id: ResourceID) -> u128 {
@@ -62,7 +62,7 @@ impl Resources {
             if *item >= 0 {
                 self.curr[i] -= *item as u128;
             } else {
-                self.curr[i] += (- *item) as u128;
+                self.curr[i] += (-*item) as u128;
             }
         }
         true //We did this operation.
@@ -90,7 +90,7 @@ impl Resources {
                           // something, we skip it.
             }
             let min_amt: usize = (self.curr[i] as usize / *item as usize) as usize; //Division by zero is impossible, by the way. Calculates the number of times
-                                                                                       // you can buy a component.
+                                                                                    // you can buy a component.
             if min_amt < min {
                 min = min_amt; //Updates the mimimum value
             }
@@ -110,7 +110,7 @@ impl Resources {
     } //Forceful spending. Exactly the same as spending, but no check
     pub fn gain(&mut self, other: &Vec<i64>) -> bool {
         for (i, item) in other.iter().enumerate() {
-            if (self.curr[i] as i64) < - item {
+            if (self.curr[i] as i64) < -item {
                 return false;
             }
         }
@@ -118,7 +118,7 @@ impl Resources {
             if other[i] >= 0 {
                 self.curr[i] += *item as u128;
             } else {
-                self.curr[i] -= (- item) as u128;
+                self.curr[i] -= (-item) as u128;
             }
         }
         true
@@ -297,7 +297,7 @@ pub fn display_vec_one(rss: &ResourceDict, amts: &Vec<u128>, sep: &str) -> Strin
         res.push_str(&rss.get(ResourceID::new(i))); //energy
         res.push_str(sep); //,
     }
-    if res.is_empty(){
+    if res.is_empty() {
         for _ in 0..sep.len() {
             res.pop(); //Removes the last separator
         }

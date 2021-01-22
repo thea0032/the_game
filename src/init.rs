@@ -1,4 +1,4 @@
-use crate::resources;
+use crate::{resources, ui::io::Config};
 use crate::{
     component::{accessible, init, ComponentID, Components},
     instr::Directions,
@@ -119,26 +119,26 @@ pub fn rss() -> ResourceDict {
             "Factory jobs".to_string(),
         ],
         vec![
-            0,         //Energy
-            1,         //Water
-            1,         //Air
-            1,         //Ore
-            4,         //Uranium
-            5,         //Biomass
-            1,         //Food
-            1,         //Metal
-            10,        //Population
-            1,         //Luxuries
-            1,         //Production
-            0,         //Transfer
-            1,         //Fuel
-            u128::MAX, //Movement
-            u128::MAX, //Space
-            u128::MAX, //Living space
-            u128::MAX, //Mass
-            u128::MAX, //Mining jobs
-            u128::MAX, //Uranium mining jobs
-            u128::MAX, //Factory jobs
+            0,
+            1,
+            1,
+            1,
+            4,
+            5,
+            1,
+            1,
+            10,
+            1,
+            1,
+            0,
+            1,
+            u128::MAX,
+            u128::MAX,
+            u128::MAX,
+            u128::MAX,
+            u128::MAX,
+            u128::MAX,
+            u128::MAX,
         ],
     )
 }
@@ -150,6 +150,6 @@ pub fn cmp(rss: &ResourceDict) -> Components {
 pub fn dir() -> Directions {
     Directions::new()
 }
-pub fn init_file() {
-    crate::ui::io::init();
+pub fn config() -> Config {
+    return Config::setup();
 }

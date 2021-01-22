@@ -15,7 +15,7 @@ impl System {
         System {
             name,
             loc,
-            objs: vec![],
+            objs: Vec::new(),
         }
     } //Basic constructor
     pub fn add_obj(&mut self, id: ObjectID) {
@@ -25,13 +25,13 @@ impl System {
     pub fn len(&self) -> usize {
         self.objs.len()
     } //The number of objects in the system
-    pub fn display(&self, amt_before: usize, names: &Vec<String>, sys: &Systems) -> String {
+    pub fn display(&self, names: &Vec<String>, sys: &Systems) -> String {
         let mut res: String = "".to_string();
         for i in 0..self.objs.len() {
             res.push_str(sys.get_o_stat(self.objs[i]).color());
             res.push_str(&format!(
                 "{}. {}\n",
-                i + amt_before,
+                i,
                 names[self.objs[i].get()]
             ));
         }
@@ -58,7 +58,7 @@ impl System {
         }
         res
     } //Filtered display function
-    pub fn get_objs(& self) -> & Vec<ObjectID> {
+    pub fn get_objs(&self) -> &Vec<ObjectID> {
         &self.objs
     } //Getter
     pub fn color(&self, sys: &Systems) -> &str {

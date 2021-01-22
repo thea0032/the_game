@@ -106,7 +106,7 @@ impl Object {
         }
         amt
     }
-    pub fn name(& self) -> & str {
+    pub fn name(&self) -> &str {
         &self.name
     } //Returns the object's name
     pub fn color(&self) -> &str {

@@ -18,11 +18,11 @@ pub struct Systems {
 impl Systems {
     pub fn new() -> Systems {
         Systems {
-            systems: vec![],
-            sys_names: vec![],
-            objects: vec![],
-            obj_names: vec![],
-            obj_systems: vec![],
+            systems: Vec::new(),
+            sys_names: Vec::new(),
+            objects: Vec::new(),
+            obj_names: Vec::new(),
+            obj_systems: Vec::new(),
         }
     } //Basic new function
     pub fn add_s(&mut self, name: String, loc: Location) {
@@ -48,16 +48,16 @@ impl Systems {
                                                       // is inside the correct
                                                       // system
     } //Adds an object to the list
-    pub fn get_s(& mut self, sys: SystemID) -> & mut System {
+    pub fn get_s(&mut self, sys: SystemID) -> &mut System {
         &mut self.systems[sys.get()]
     } //Gets a system
-    pub fn get_o(& mut self, obj: ObjectID) -> & mut Object {
+    pub fn get_o(&mut self, obj: ObjectID) -> &mut Object {
         &mut self.objects[obj.get()]
     } //Gets an object
-    pub fn get_s_stat(& self, sys: SystemID) -> & System {
+    pub fn get_s_stat(&self, sys: SystemID) -> &System {
         &self.systems[sys.get()]
     } //Gets a system immutably
-    pub fn get_o_stat(& self, obj: ObjectID) -> & Object {
+    pub fn get_o_stat(&self, obj: ObjectID) -> &Object {
         &self.objects[obj.get()]
     } //Gets an object immuably
     pub fn get_s_name(&mut self, sys: SystemID) -> String {
@@ -69,8 +69,8 @@ impl Systems {
     pub fn get_o_sys(&self, obj: ObjectID) -> SystemID {
         self.obj_systems[obj.get()]
     } //Gets the system the object is contained
-    pub fn get_os(& self, ids: &Vec<ObjectID>) -> Vec<& Object> {
-        let mut res: Vec<&Object> = vec![];
+    pub fn get_os(&self, ids: &Vec<ObjectID>) -> Vec<&Object> {
+        let mut res: Vec<&Object> = Vec::new();
         for id in ids {
             res.push(&self.objects[id.get()]);
         }
@@ -79,13 +79,13 @@ impl Systems {
     pub fn get_o_names(&self) -> &Vec<String> {
         &self.obj_names
     } //Gets all of the object names
-    pub fn display(&self, amt_before: usize) -> String {
+    pub fn display(&self) -> String {
         let mut result: String = "".to_string();
         for i in 0..self.sys_names.len() {
             result.push_str(&format!(
                 "{}{}. {}\n",
                 self.get_s_stat(SystemID::new(i)).color(self),
-                i + amt_before,
+                i,
                 self.sys_names[i]
             ));
         }

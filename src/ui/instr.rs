@@ -6,17 +6,7 @@ use crate::{
     systems::{object_id::ObjectID, Systems},
 };
 
-use super::{
-    ansi,
-    component::{select_component_unfiltered, select_components_unfiltered},
-    condition::make_condition,
-    io::{get_from_input, get_from_input_valid, wait_for_input},
-    location::get_location,
-    object::get_object,
-    recipe::{select_recipe_unfiltered, select_recipes_unfiltered},
-    resources::get_rss,
-    system::get_system,
-};
+use super::{ansi, component::{select_component_unfiltered, select_components_unfiltered}, condition::make_condition, io::{Config, get_from_input, get_from_input_valid, get_str, wait_for_input}, location::get_location, object::get_object, recipe::{select_recipe_unfiltered, select_recipes_unfiltered}, resources::get_rss, system::get_system};
 
 pub fn make_queue(
     sys: &mut Systems,
@@ -24,22 +14,25 @@ pub fn make_queue(
     cmp: &Components,
     rss: &ResourceDict,
     instrs: &mut Instrs,
+    cfg:&mut Config
+
 ) {
     let is_kept: bool = get_from_input(
         "Is this queue for tasks that are going to be re-used? ",
         "Please enter true or false. ",
+        cfg,
     ); //Gets property from input
-    let name: String = get_from_input(
+    let name: String = get_str(
         "What do you want to call this queue?",
-        "Please enter a valid string! You probably shouldn't see this.",
+        cfg,
     ); //Gets property from input
-    wait_for_input("You will now be prompted to enter the first instruction of the queue. Press enter to continue: "); //Explains what the next part is.
-    if let Some(val) = make_instr(rss, cmp, sys, obj, 1) {
+    wait_for_input("You will now be prompted to enter the first instruction of the queue. Press enter to continue: ", cfg); //Explains what the next part is.
+    if let Some(val) = make_instr(rss, cmp, sys, obj, 1, cfg) {
         //Gets an instruction
         let new_queue = Queue::new(!is_kept, val); //Makes the queue based on the inputs
         instrs.add(new_queue, name); //Adds it
     } else {
-        wait_for_input(&format!("{}Queue aborted!", ansi::RED)); //If you didn'
+        wait_for_input(&format!("{}Queue aborted!", ansi::RED), cfg); //If you didn'
                                                                  // t make a new
                                                                  // instruction,
                                                                  // abort
@@ -51,6 +44,7 @@ pub fn make_instr(
     sys: &mut Systems,
     obj: ObjectID,
     queue_len: usize,
+    cfg:&mut Config
 ) -> Option<Instr> {
     println!("Enter the type of instruction: ");
     println!("{}", ansi::GREEN);
@@ -77,18 +71,18 @@ pub fn make_instr(
     println!("12. Abort instruction creation");
     print!("{}", ansi::RESET); //Prints stuff out
     const LEN: usize = 13; //Amount of options
-    let response: usize = get_from_input_valid("", "Please enter a valid input!", |x| x <= &LEN); //Gets input
+    let response: usize = get_from_input_valid("", "Please enter a valid input!", cfg, |x| x <= &LEN); //Gets input
     match response {
         //Gives an instruction based on it
-        0 => Some(make_move()),
-        1 => Some(make_jump(sys)),
-        2 => Some(make_moveto(sys)),
-        3 => Some(make_transfer(rss, sys)),
-        4 => Some(make_auto_recipe(cmp)),
-        5 => Some(make_auto_cmp(cmp)),
-        6 => Some(make_if(sys, obj, cmp, rss, queue_len)),
+        0 => Some(make_move(cfg)),
+        1 => Some(make_jump(sys, cfg)),
+        2 => Some(make_moveto(sys, cfg)),
+        3 => Some(make_transfer(rss, sys, cfg)),
+        4 => Some(make_auto_recipe(cmp, cfg)),
+        5 => Some(make_auto_cmp(cmp, cfg)),
+        6 => Some(make_if(sys, obj, cmp, rss, queue_len, cfg)),
         7 => Some(make_all()),
-        8 => Some(make_goto(queue_len)),
+        8 => Some(make_goto(queue_len, cfg)),
         9 => Some(make_sticky()),
         10 => Some(make_end()),
         11 => Some(make_fail()),
@@ -96,19 +90,19 @@ pub fn make_instr(
         _ => panic!("Input validation has deeply failed!"),
     }
 }
-pub fn make_move() -> Instr {
-    Instr::Move(get_location()) //Gets a location
+pub fn make_move(cfg:&mut Config) -> Instr {
+    Instr::Move(get_location(cfg)) //Gets a location
 } //Makes a move instruction from input
-pub fn make_jump(sys: &Systems) -> Instr {
-    Instr::Jump(get_system(sys)) //Gets a system
+pub fn make_jump(sys: &Systems, cfg:&mut Config) -> Instr {
+    Instr::Jump(get_system(sys, cfg)) //Gets a system
 } //Makes a jump instruction from input
-pub fn make_transfer(rss: &ResourceDict, sys: &Systems) -> Instr {
+pub fn make_transfer(rss: &ResourceDict, sys: &Systems, cfg:&mut Config) -> Instr {
     let mut input: Vec<u128> = extra_bits::fill(rss.len(), 0);
-    get_rss(rss, &mut input);
-    Instr::Transfer(input, get_object(sys, get_system(sys)))
+    get_rss(rss, &mut input, cfg);
+    Instr::Transfer(input, get_object(sys, get_system(sys, cfg), cfg))
 } //Makes a transfer instruction from input
-pub fn make_moveto(sys: &Systems) -> Instr {
-    Instr::MoveTo(get_object(sys, get_system(sys)))
+pub fn make_moveto(sys: &Systems, cfg:&mut Config) -> Instr {
+    Instr::MoveTo(get_object(sys, get_system(sys, cfg), cfg))
 } //Makes a move to instruction from input
 pub fn make_if(
     sys: &mut Systems,
@@ -116,36 +110,38 @@ pub fn make_if(
     cmp: &Components,
     rss: &ResourceDict,
     len: usize,
+    cfg:&mut Config
 ) -> Instr {
     Instr::If(
         make_condition(),
-        Box::new(make_instr(rss, cmp, sys, obj, len).unwrap_or(Instr::Fail)),
-        Box::new(make_instr(rss, cmp, sys, obj, len).unwrap_or(Instr::Fail)),
+        Box::new(make_instr(rss, cmp, sys, obj, len, cfg).unwrap_or(Instr::Fail)),
+        Box::new(make_instr(rss, cmp, sys, obj, len, cfg).unwrap_or(Instr::Fail)),
     )
 } //Makes an if instruction from input
 pub fn make_all() -> Instr {
-    Instr::All(vec![])
+    Instr::All(Vec::new())
 } //Makes an empty all instruction
-pub fn make_goto(queue_len: usize) -> Instr {
+pub fn make_goto(queue_len: usize, cfg:&mut Config) -> Instr {
     Instr::GoTo(InstrID::new(get_from_input_valid(
         &format!(
             "Enter the position you want to go to (from 0 to {}): ",
-            queue_len
+            queue_len,
         ),
         "Please enter a valid number!",
+        cfg,
         |x| x < &queue_len,
     )))
 } //Makes a goto instruction from input
-pub fn make_auto_recipe(cmp: &Components) -> Instr {
-    let res = select_recipes_unfiltered(cmp);
+pub fn make_auto_recipe(cmp: &Components, cfg:&mut Config) -> Instr {
+    let res = select_recipes_unfiltered(cmp, cfg);
     if let Some(res) = res {
         Instr::PerformRecipe(res.0, res.1)
     } else {
         Instr::Fail
     }
 } //Makes an automatic recipe performing instruction from input
-pub fn make_auto_cmp(cmp: &Components) -> Instr {
-    let res = select_components_unfiltered(cmp);
+pub fn make_auto_cmp(cmp: &Components, cfg:&mut Config) -> Instr {
+    let res = select_components_unfiltered(cmp, cfg);
     if let Some(res) = res {
         Instr::InstallComponent(res.0, res.1)
     } else {
@@ -167,6 +163,7 @@ pub fn instrs_menu(
     cmp: &Components,
     rss: &ResourceDict,
     instrs: &mut Instrs,
+    cfg:&mut Config
 ) {
     loop {
         println!("Viewing current instructions for {}:", sys.get_o_name(obj));
@@ -177,18 +174,19 @@ pub fn instrs_menu(
         let len = 3;
         println!("{}", instrs.display(len)); //Prints stuff
         print!("{}", ansi::RESET);
-        let input: usize = get_from_input_valid("", "Please enter a valid input.", |x| {
+        let input: usize = get_from_input_valid("", "Please enter a valid input.", cfg,  |x| {
             *x < (len + instrs.len())
         }); //Gets input
         match input {
             0 => break,                                  //Exit out
-            1 => make_queue(sys, obj, cmp, rss, instrs), //Make new queue
+            1 => make_queue(sys, obj, cmp, rss, instrs, cfg), //Make new queue
             2 => {
                 println!("{}", instrs.display(0));
                 println!("{}. abort", instrs.len());
                 let pos: usize = get_from_input_valid(
                     "Which queue do you want to remove?",
                     "Please enter a valid input",
+                    cfg,
                     |x| *x <= instrs.len(),
                 );
                 if pos < instrs.len() {
@@ -200,7 +198,7 @@ pub fn instrs_menu(
             } //Remove queue
             _ => {
                 let name = instrs.get_name(input - len);
-                queue_menu(sys, obj, cmp, rss, instrs.get_queue(input - len), name)
+                queue_menu(sys, obj, cmp, rss, instrs.get_queue(input - len), name, cfg)
             } //Enter another queue
         }
     }
@@ -212,6 +210,7 @@ pub fn queue_menu(
     rss: &ResourceDict,
     queue: &mut Queue,
     name: String,
+    cfg: &mut Config,
 ) {
     loop {
         println!("Viewing queue {}:", name);
@@ -220,7 +219,7 @@ pub fn queue_menu(
         println!("2. Remove an instruction. ");
         let len = 3;
         println!("{}", queue.display(len, obj, sys, rss, cmp)); //Displays stuff
-        let input: usize = get_from_input_valid("", "Please enter a valid input.", |x| {
+        let input: usize = get_from_input_valid("", "Please enter a valid input.", cfg, |x| {
             *x < (len + queue.len())
         }); //Gets input
         match input {
@@ -231,16 +230,17 @@ pub fn queue_menu(
                 let pos: usize = get_from_input_valid(
                     "Where do you want to put the instruction?",
                     "Please enter a valid location!",
+                    cfg,
                     |x| *x <= queue.len(),
                 ); //Gets pos
-                if let Some(val) = make_instr(rss, cmp, sys, obj, queue.len() + 1) {
+                if let Some(val) = make_instr(rss, cmp, sys, obj, queue.len() + 1, cfg) {
                     //Gets instr
                     queue.ins(val, pos); //Inserts if it wasn't aborted
                     println!("Instruction insertion successful!");
                 } else {
                     println!("{}Instruction insertion aborted!", ansi::RED);
                 }
-                wait_for_input("Press enter to continue: ");
+                wait_for_input("Press enter to continue: ", cfg);
             } //Makes a new instruction from input
             2 => {
                 println!("{}", queue.display(0, obj, sys, rss, cmp)); //Displays stuff
@@ -248,6 +248,7 @@ pub fn queue_menu(
                 let pos: usize = get_from_input_valid(
                     "Which instruction do you want to delete?",
                     "Please enter a valid number (or the queue's length)",
+                    cfg,
                     |x| *x <= queue.len(),
                 );
                 if pos < len {
@@ -258,11 +259,11 @@ pub fn queue_menu(
                     println!("{}Instruction removal aborted!", ansi::RED);
                     //Otherwise, does nothing.
                 }
-                wait_for_input("Press enter to continue: ");
+                wait_for_input("Press enter to continue: ", cfg);
             } //Removes an instruction based on input
             _ => {
                 let temp = queue.len();
-                instr_menu(rss, cmp, sys, obj, queue.get(input - len), temp)
+                instr_menu(rss, cmp, sys, obj, queue.get(input - len), temp, cfg)
             }
         }
     }
@@ -274,6 +275,7 @@ pub fn instr_menu(
     obj: ObjectID,
     instr: &mut Instr,
     queue_len: usize,
+    cfg:&mut Config
 ) {
     loop {
         println!("Viewing {}", instr.display(obj, sys, rss, cmp));
@@ -281,12 +283,12 @@ pub fn instr_menu(
         println!("0. Exit"); //Prints stuff
         let len = 1;
         println!("{}", display_options(instr, obj, sys, rss, cmp, len)); //Displays your options
-        let input: usize = get_from_input_valid("", "Please enter a valid input!", |x| {
+        let input: usize = get_from_input_valid("", "Please enter a valid input!", cfg, |x| {
             *x < get_len(instr, len)
         }); //Gets input
         match input {
             0 => break,                                                            //Exit
-            _ => parse_options(instr, input - len, obj, sys, rss, cmp, queue_len), /* Does something based on the instruction viewed. */
+            _ => parse_options(instr, input - len, obj, sys, rss, cmp, queue_len, cfg), /* Does something based on the instruction viewed. */
         }
     }
 }
@@ -388,6 +390,7 @@ pub fn parse_options(
     rss: &ResourceDict,
     cmp: &Components,
     queue_len: usize,
+    cfg:&mut Config,
 ) {
     match instr {
         Instr::All(val) => {
@@ -396,9 +399,10 @@ pub fn parse_options(
                     let add_num = get_from_input_valid(
                         "Enter the position where you want to insert your position:",
                         "Please enter a valid number!",
+                        cfg,
                         |x| *x <= val.len(),
                     ); //Inserts
-                    let add_val = make_instr(rss, cmp, sys, obj, queue_len); //Gets from input
+                    let add_val = make_instr(rss, cmp, sys, obj, queue_len, cfg); //Gets from input
                     if let Some(v) = add_val {
                         val.insert(add_num, v); //Inserts an instruction based
                                                 // on the input
@@ -408,35 +412,36 @@ pub fn parse_options(
                     let rmv_num: usize = get_from_input_valid(
                         "Enter the position you want to remove:",
                         "Please enter a valid number",
+                        cfg,
                         |x| *x < val.len(),
                     ); //Gets from input
                     val.remove(rmv_num); //Removes the instruction
                 }
                 _ => {
-                    instr_menu(rss, cmp, sys, obj, &mut val[input - 1], queue_len);
+                    instr_menu(rss, cmp, sys, obj, &mut val[input - 1], queue_len, cfg);
                     //Enters the instruction displayed
                 }
             }
         }
         Instr::Move(val) => {
-            *val = get_location(); //Updates location
+            *val = get_location(cfg); //Updates location
         }
         Instr::Jump(val) => {
-            *val = get_system(sys); //Updates system
+            *val = get_system(sys, cfg); //Updates system
         }
         Instr::Transfer(val, val2) => {
             match input {
                 0 => {
-                    get_rss(rss, val) //Updates resources to be transferred
+                    get_rss(rss, val, cfg) //Updates resources to be transferred
                 }
                 1 => {
-                    *val2 = get_object(sys, get_system(sys)); //Updates object
+                    *val2 = get_object(sys, get_system(sys, cfg), cfg); //Updates object
                 }
                 _ => {}
             }
         }
         Instr::MoveTo(val) => {
-            *val = get_object(sys, get_system(sys)); //Updates object
+            *val = get_object(sys, get_system(sys, cfg), cfg); //Updates object
         }
         Instr::If(_, _, _) => {
             panic!("Not implemented yet!");
@@ -445,13 +450,14 @@ pub fn parse_options(
             *val = InstrID::new(get_from_input_valid(
                 "Enter the new position",
                 "Please enter a valid input!",
+                cfg,
                 |x| *x < queue_len,
             )); //Changes the instruction we go to
         }
         Instr::PerformRecipe(recipe, amt) => {
             match input {
                 0 => {
-                    if let Some(val) = select_recipe_unfiltered(cmp) {
+                    if let Some(val) = select_recipe_unfiltered(cmp, cfg) {
                         *recipe = val; //Option 1: Select a new recipe
                     };
                 }
@@ -459,6 +465,7 @@ pub fn parse_options(
                     *amt = get_from_input_valid(
                         "Enter the new amount",
                         "Please enter a valid input!",
+                        cfg,
                         |_| true,
                     ); //Option 2: Select a new amount
                 }
@@ -468,7 +475,7 @@ pub fn parse_options(
         Instr::InstallComponent(component, amt) => {
             match input {
                 0 => {
-                    if let Some(val) = select_component_unfiltered(cmp) {
+                    if let Some(val) = select_component_unfiltered(cmp, cfg) {
                         *component = val; //Option 1: select a new component
                     };
                 }
@@ -476,6 +483,7 @@ pub fn parse_options(
                     *amt = get_from_input_valid(
                         "Enter the new amount",
                         "Please enter a valid input!",
+                        cfg,
                         |_| true,
                     ); //Option 2: Select a new amount
                 }

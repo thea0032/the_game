@@ -11,9 +11,7 @@ pub enum Shape {
 impl Shape {
     pub fn is_inside(&self, pt: Location) -> bool {
         match self {
-            Shape::Circle(val1, val2) => {
-                val2.close_enough(&pt, *val1)
-            }
+            Shape::Circle(val1, val2) => val2.close_enough(&pt, *val1),
             Intersect(val) => {
                 for line in val {
                     if !line.is_inside(pt) {
@@ -30,9 +28,7 @@ impl Shape {
                 }
                 false
             }
-            Shape::Not(val) => {
-                !(*val).is_inside(pt)
-            }
+            Shape::Not(val) => !(*val).is_inside(pt),
         }
     }
     pub fn habitable_zone(star_location: Location, intensity: f64) -> Shape {

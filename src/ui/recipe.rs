@@ -4,12 +4,9 @@ use crate::{
     resources::ResourceDict,
 };
 
-use super::{
-    ansi,
-    io::{get_from_input, get_from_input_valid, wait_for_input},
-};
+use super::{ansi, io::{Config, get_from_input, get_from_input_valid, wait_for_input}};
 
-pub fn select_recipes(cmp: &Components, obj: &Object) -> Option<(RecipeID, usize)> {
+pub fn select_recipes(cmp: &Components, obj: &Object, cfg:&mut Config) -> Option<(RecipeID, usize)> {
     let amts: Vec<usize> = cmp
         .recipe_list
         .iter()
@@ -22,6 +19,7 @@ pub fn select_recipes(cmp: &Components, obj: &Object) -> Option<(RecipeID, usize
     let input: usize = get_from_input_valid(
         "Enter the recipe you want: ",
         "Please enter a valid id",
+        cfg,
         |x| x <= &len,
     ); //Gets input
     if input == len {
@@ -31,16 +29,18 @@ pub fn select_recipes(cmp: &Components, obj: &Object) -> Option<(RecipeID, usize
     let amt: usize = get_from_input_valid(
         "Enter the amount of times you want to perform the recipe: ",
         "please enter a valid id",
+        cfg,
         |x| x <= &amts[id],
     ); //Gets amount
     Some((RecipeID::new(id), amt)) //Returns
 } //Returns a recipe and amount from input unless aborted
-pub fn select_recipe_unfiltered(cmp: &Components) -> Option<RecipeID> {
+pub fn select_recipe_unfiltered(cmp: &Components, cfg:&mut Config) -> Option<RecipeID> {
     println!("{}", cmp.display_r());
     println!("{}{}. Quit{}", ansi::RED, cmp.len_r(), ansi::RESET); //Displays options
     let input: usize = get_from_input_valid(
         "Enter the recipe you want: ",
         "Please enter a valid id",
+        cfg,
         |x| x <= &cmp.len_r(),
     ); //Gets input
     if input == cmp.len_r() {
@@ -48,12 +48,13 @@ pub fn select_recipe_unfiltered(cmp: &Components) -> Option<RecipeID> {
     }
     Some(RecipeID::new(input)) //return
 } //Returns a recipe from input unless aborted
-pub fn select_recipes_unfiltered(cmp: &Components) -> Option<(RecipeID, usize)> {
+pub fn select_recipes_unfiltered(cmp: &Components, cfg:&mut Config) -> Option<(RecipeID, usize)> {
     println!("{}", cmp.display_r());
     println!("{}{}. Quit{}", ansi::RED, cmp.len_r(), ansi::RESET); //Displays options
     let input: usize = get_from_input_valid(
         "Enter the recipe you want: ",
         "Please enter a valid id",
+        cfg,
         |x| x <= &cmp.len_r(),
     ); //Gets input
     if input == cmp.len_r() {
@@ -63,15 +64,16 @@ pub fn select_recipes_unfiltered(cmp: &Components) -> Option<(RecipeID, usize)> 
     let amt: usize = get_from_input(
         "Enter the amount of times you want to perform the recipe: ",
         "please enter a valid id",
+        cfg,
     ); //Gets amount
     Some((RecipeID::new(input), amt)) //Returns value
 }
-pub fn r_details(rss: &ResourceDict, cmp: &mut Components) {
+pub fn r_details(rss: &ResourceDict, cmp: &mut Components, cfg:&mut Config) {
     println!("{}", cmp.display_detailed_r(rss));
-    wait_for_input("Press enter to continue:");
+    wait_for_input("Press enter to continue:", cfg);
 }
-pub fn perform_recipe(cmp: &mut Components, obj: &mut Object) {
-    let recipe = select_recipes(cmp, obj);
+pub fn perform_recipe(cmp: &mut Components, obj: &mut Object, cfg:&mut Config) {
+    let recipe = select_recipes(cmp, obj, cfg);
     if let Some(recipe) = recipe {
         let amt_success = obj.do_recipes(recipe.0, cmp, recipe.1);
         println!("{} recipes successfully performed!", amt_success);
