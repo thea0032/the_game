@@ -122,6 +122,7 @@ impl Components {
             x.push_str(&format!("{}: {}", i, &self.recipe_names[i]));
             x.push('\n');
             x.push_str(&self.recipe_list[i].display(rss));
+            x.push('\n');
         }
         x
     }
