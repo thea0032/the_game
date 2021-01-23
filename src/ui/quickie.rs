@@ -5,16 +5,9 @@ use crate::{
     systems::{object_id::ObjectID, Systems},
 };
 
-use super::{ansi, instr, io::{Config, get_from_input_valid, wait_for_input}};
+use super::{ansi, config::Config, instr, io::{get_from_input_valid, wait_for_input,}};
 
-pub fn quickie(
-    rss: &ResourceDict,
-    cmp: &Components,
-    sys: &mut Systems,
-    dir: &mut Quickie,
-    obj: ObjectID,
-    cfg:&mut Config
-) {
+pub fn quickie(rss: &ResourceDict, cmp: &Components, sys: &mut Systems, dir: &mut Quickie, obj: ObjectID, cfg: &mut Config) {
     loop {
         print!("{}", ansi::GREEN);
         println!("0. Go back");
@@ -23,8 +16,7 @@ pub fn quickie(
         println!("3. Remove an instruction.");
         let len = 4;
         println!("{}", dir.display(len, obj, sys, rss, cmp)); //Displays options
-        let input: usize =
-            get_from_input_valid("", "Please enter a valid input", cfg, |x| *x < len + dir.len()); //Gets option
+        let input: usize = get_from_input_valid("", "Please enter a valid input", cfg, |x| *x < len + dir.len()); //Gets option
         match input {
             0 => break, //Breaks out of menu
             1 => {
@@ -63,8 +55,8 @@ pub fn quickie(
                     println!("{}Instruction insertion aborted!", ansi::RED);
                 }
                 wait_for_input("Press enter to continue: ", cfg); //Same as before,
-                                                             // but the instruction
-                                                             // is temporary
+                                                                  // but the instruction
+                                                                  // is temporary
             }
             3 => {
                 println!("{}", dir.display(0, obj, sys, rss, cmp));

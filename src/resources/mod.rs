@@ -19,7 +19,7 @@ impl Resources {
         }
     } //Basic new function
     pub fn tick(&mut self) -> Vec<bool> {
-        let mut res: Vec<bool> = vec![]; //Initializes result
+        let mut res: Vec<bool> = Vec::new(); //Initializes result
         for i in 0..self.curr.len() {
             //For every resource...
             if self.curr[i] > self.cap[i] {
@@ -209,15 +209,7 @@ impl Resources {
         ));
         res //Adds 3 lines, returns it.
     } //A basic display function
-    pub fn display_func_new(
-        &self,
-        rss: &ResourceDict,
-        msg: &str,
-        a: &Vec<i128>,
-        zero: i128,
-        max: i128,
-        prev: &Vec<i128>,
-    ) -> String {
+    pub fn display_func_new(&self, rss: &ResourceDict, msg: &str, a: &Vec<i128>, zero: i128, max: i128, prev: &Vec<i128>) -> String {
         let mut x: String = "".to_string(); //Initializes result
         let mut flag: bool = false; //A flag for if resources exist in this place
         x.push_str(msg); //Adds the inputted message onto the result.

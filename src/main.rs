@@ -4,7 +4,7 @@ use component::Components;
 use instr::Directions;
 use resources::ResourceDict;
 use systems::Systems;
-use ui::io::Config;
+use ui::config::Config;
 mod component;
 mod extra_bits;
 mod file;

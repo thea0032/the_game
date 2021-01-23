@@ -8,17 +8,14 @@ impl Location {
         Location { x, y }
     }
     pub fn close_enough(&self, other: &Location, required_distance: f64) -> bool {
-        let calculation: f64 =
-            ((self.x - other.x).abs().powf(2.0) + (self.y - other.y).abs().powf(2.0)).sqrt();
+        let calculation: f64 = ((self.x - other.x).abs().powf(2.0) + (self.y - other.y).abs().powf(2.0)).sqrt();
         calculation <= required_distance
     }
     pub fn eq(&self, other: &Location) -> bool {
         self.x == other.x && self.y == other.y
     }
     pub fn move_towards(&mut self, other: Location, distance: f64) {
-        let total_dist = f64::sqrt(
-            (self.x - other.x) * (self.x - other.x) + (self.y - other.y) * (self.y - other.y),
-        );
+        let total_dist = f64::sqrt((self.x - other.x) * (self.x - other.x) + (self.y - other.y) * (self.y - other.y));
         let mut ratio = distance / total_dist;
         if ratio > 1.0 {
             ratio = 1.0;

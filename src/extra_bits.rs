@@ -1,7 +1,7 @@
 pub fn fill<T>(len: usize, zero: T) -> Vec<T>
 where
     T: Copy, {
-    let mut res: Vec<T> = vec![];
+    let mut res: Vec<T> = Vec::new();
     for _ in 0..len {
         res.push(zero);
     }

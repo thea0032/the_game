@@ -5,10 +5,7 @@ use crate::{component::RecipeID, object::Object, resources::ResourceID, ui::ansi
 impl Object {
     pub fn install_components(&mut self, id: ComponentID, cmp: &Components, amt: usize) -> usize {
         let component = cmp.get(id); //Gets component
-        if !self
-            .resources
-            .spend(&component.cost().iter().map(|x| x * (amt as i64)).collect())
-        {
+        if !self.resources.spend(&component.cost().iter().map(|x| x * (amt as i64)).collect()) {
             //Attempts to spend all resources at once. If this fails...
             for i in 0..amt {
                 //Attemts to install the components one at a time.
@@ -22,36 +19,22 @@ impl Object {
                     self.component_amounts[id.id()] += 1;
                 } //Registers an increase on either the list or the hidden list.
                 self.resources.add_storage_vec(component.storage());
-                self.resources.add_surplus_vec(component.surplus()); //Finalizes the component's installation by adding its surplus and storage bonuses
+                self.resources.add_surplus_vec(component.surplus()); //Finalizes the component's
+                                                                     // installation by adding its
+                                                                     // surplus and storage bonuses
             }
         } else {
             //If the spending succeeds, finalize it.
-            self.resources.add_storage_vec(
-                &component
-                    .storage()
-                    .iter()
-                    .map(|x| x * (amt as u128))
-                    .collect(),
-            );
-            self.resources.add_surplus_vec(
-                &component
-                    .surplus()
-                    .iter()
-                    .map(|x| x * (amt as i64))
-                    .collect(),
-            );
+            self.resources
+                .add_storage_vec(&component.storage().iter().map(|x| x * (amt as u128)).collect());
+            self.resources
+                .add_surplus_vec(&component.surplus().iter().map(|x| x * (amt as i64)).collect());
         }
         amt //We did all of the installations!
     }
     pub fn do_recipes(&mut self, id: RecipeID, cmp: &Components, amt: usize) -> usize {
         let recipe = cmp.get_r(id);
-        if !self.resources.spend(
-            &recipe
-                .cost_stat()
-                .iter()
-                .map(|x| x * (amt as i64))
-                .collect(),
-        ) {
+        if !self.resources.spend(&recipe.cost_stat().iter().map(|x| x * (amt as i64)).collect()) {
             //Attempts to perform all of the recipes at once. If that fails...
             for i in 0..amt {
                 //Attempts to do them one at a time!
@@ -66,29 +49,13 @@ impl Object {
     }
     pub fn force_install_components(&mut self, id: ComponentID, cmp: &mut Components, amt: u128) {
         let component = cmp.get(id); //Gets component
+        self.resources.force_spend(&component.cost().iter().map(|x| x * (amt as i64)).collect()); //Forcefully spends all required resources at once
         self.resources
-            .force_spend(&component.cost().iter().map(|x| x * (amt as i64)).collect()); //Forcefully spends all required resources at once
-        self.resources.add_storage_vec(
-            &component
-                .storage()
-                .iter()
-                .map(|x| x * (amt as u128))
-                .collect(),
-        ); //Adds the storage benefits of the component.
-        self.resources.add_surplus_vec(
-            &component
-                .surplus()
-                .iter()
-                .map(|x| x * (amt as i64))
-                .collect(),
-        ); //Adds the surplus benefits of the component.
+            .add_storage_vec(&component.storage().iter().map(|x| x * (amt as u128)).collect()); //Adds the storage benefits of the component.
+        self.resources
+            .add_surplus_vec(&component.surplus().iter().map(|x| x * (amt as i64)).collect()); //Adds the surplus benefits of the component.
     }
-    pub fn remove_components(
-        &mut self,
-        id: ComponentID,
-        cmp: &mut Components,
-        amt: usize,
-    ) -> usize {
+    pub fn remove_components(&mut self, id: ComponentID, cmp: &mut Components, amt: usize) -> usize {
         for i in 0..amt {
             let component = cmp.get(id);
             if !self.resources.gain(component.cost())

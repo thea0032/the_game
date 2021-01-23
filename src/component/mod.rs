@@ -106,10 +106,7 @@ impl Components {
         let mut counter: usize = 0;
         for (i, item) in a.iter().enumerate() {
             if *item != 0 {
-                x.push_str(&format!(
-                    "{}: {} ({})",
-                    counter, &self.recipe_names[i], a[i]
-                ));
+                x.push_str(&format!("{}: {} ({})", counter, &self.recipe_names[i], a[i]));
                 x.push_str(", \n");
                 counter += 1;
             }
@@ -212,16 +209,10 @@ impl ComponentID {
         self.is_hidden
     } //getter
     pub fn new(id: usize) -> ComponentID {
-        ComponentID {
-            id,
-            is_hidden: false,
-        }
+        ComponentID { id, is_hidden: false }
     } //new, hidden set to false
     pub fn new_h(id: usize) -> ComponentID {
-        ComponentID {
-            id,
-            is_hidden: true,
-        }
+        ComponentID { id, is_hidden: true }
     } //new, hidden set to true
 }
 #[derive(Debug, Clone, Copy)]

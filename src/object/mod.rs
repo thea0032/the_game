@@ -1,9 +1,13 @@
-use crate::component::*;
+
+use crate::{component::*, extra_bits};
 use crate::resources::*;
 use crate::{location::*, systems::system_id::*};
+
+use self::template::ObjectTemplate;
 mod component;
 mod display;
 mod tick;
+pub mod template;
 #[derive(Clone, Debug)]
 pub struct Object {
     location: Location,              //The object's current location.
@@ -16,13 +20,7 @@ pub struct Object {
     wait: usize,                     //How long the object's going to wait.
 } //The structure for an object. Objects are ships, planets, even projectiles.
 impl Object {
-    pub fn new(
-        rss: &ResourceDict,
-        cmp: &Components,
-        name: String,
-        loc: Location,
-        sys: SystemID,
-    ) -> Object {
+    pub fn new(rss: &ResourceDict, cmp: &Components, name: String, loc: Location, sys: SystemID) -> Object {
         Object {
             location: loc,
             resources: Resources::new(rss.len()),
@@ -49,4 +47,40 @@ impl Object {
     pub fn resources_mut(&mut self) -> &mut Resources {
         &mut self.resources
     } //Mutable getter
+    pub fn to_template(&self, cmp: &Components, rss: &ResourceDict, name:String) -> ObjectTemplate {
+        let mut surplus:Vec<i64> = extra_bits::fill(rss.len(), 0);
+        let mut storage:Vec<u128> = extra_bits::fill(rss.len(), 0);
+        let mut cost:Vec<i64> = extra_bits::fill(rss.len(), 0);//initializes vectors
+        let mut transfer_cost:u64 = 0;
+        for (i, line) in self.component_amounts.iter().enumerate(){
+            let c = cmp.get(ComponentID::new(i));
+            for (i, s) in c.surplus().iter().enumerate(){
+                surplus[i] += s * (*line as i64);
+            }
+            for (i, s) in c.storage().iter().enumerate(){
+                storage[i] += s * (*line as u128);
+            }
+            for (i, s) in c.cost().iter().enumerate(){
+                cost[i] += s * (*line as i64);
+            }
+        }//Calculates cost and surplus
+        let mut flag = true;
+        for (i, item) in cost.iter().enumerate(){
+            if *item > 0{
+                if rss.get_transfer_costs()[i] == u128::MAX{//If we aren't supposed to be able to transfer something...
+                    flag = false;
+                    break;
+                }
+                transfer_cost += (*item as u64) * rss.get_transfer_costs()[i] as u64;//NOTE: The casting is SAFE
+            }
+        }//Calculates transfer cost based on all negative costs. 
+        ObjectTemplate::new(
+            self.component_amounts.clone(),
+            name,
+            surplus,
+            storage,
+            cost,
+            if flag{Some(transfer_cost)} else {None}
+        )
+    }
 }

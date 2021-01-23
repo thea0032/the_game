@@ -15,17 +15,19 @@ pub enum Instr {
     Jump(SystemID), //Jump to another system.
     Transfer(Vec<u128>, ObjectID), /* Transfer resources to another object (moves to it
                      * first) */
+    Grab(Vec<u128>, ObjectID), /* Grab resources from another object (moves to it
+                                * first) */
     MoveTo(ObjectID), //Moves to another object
     If(Condition, Box<Instr>, Box<Instr>), /* If the condition is true, evaluates the first
                        * condition. Otherwise, evaluates the second
                        * condition. */
-    All(Vec<Instr>), //Does all of these, in order, until a failure or delay.
-    GoTo(InstrID),   //Moves to another position on the queue.
-    PerformRecipe(RecipeID, usize), //Performs a recipe a certain number of times.
+    All(Vec<Instr>),                      //Does all of these, in order, until a failure or delay.
+    GoTo(InstrID),                        //Moves to another position on the queue.
+    PerformRecipe(RecipeID, usize),       //Performs a recipe a certain number of times.
     InstallComponent(ComponentID, usize), //Installs a component a certain number of times.
-    Sticky,          //Sticks here, doing nothign forever.
-    End,             //Immediately goes to the next instruction.
-    Fail,            //Fails.
+    Sticky,                               //Sticks here, doing nothign forever.
+    End,                                  //Immediately goes to the next instruction.
+    Fail,                                 //Fails.
 } //An instruction. Automates the boring parts of this game.
 
 #[derive(Debug, Clone)]
@@ -52,14 +54,7 @@ impl Instr {
     //Context required: The object that is performing the instructions, the
     // position in the queue we're in, the system dictionary, the resource
     // dictionary, the component dictionary.
-    pub fn exe(
-        &self,
-        obj: ObjectID,
-        pos: usize,
-        sys: &mut Systems,
-        rss: &ResourceDict,
-        cmp: &Components,
-    ) -> InstrRes {
+    pub fn exe(&self, obj: ObjectID, pos: usize, sys: &mut Systems, rss: &ResourceDict, cmp: &Components) -> InstrRes {
         match self {
             Instr::Move(val) => {
                 //Movement
@@ -68,20 +63,12 @@ impl Instr {
                     return InstrRes::Success(pos + 1); //We've succeeded! onto
                                                        // the next thing!
                 }
-                let movement: f64 =
-                    sys.get_o(obj)
-                        .resources()
-                        .get_curr(crate::resources::constants::MOVEMENT) as f64; //Amount of movement generated
-                let mass: f64 =
-                    sys.get_o(obj)
-                        .resources()
-                        .get_curr(crate::resources::constants::MASS) as f64; //Mass of the object
+                let movement: f64 = sys.get_o(obj).resources().get_curr(crate::resources::constants::MOVEMENT) as f64; //Amount of movement generated
+                let mass: f64 = sys.get_o(obj).resources().get_curr(crate::resources::constants::MASS) as f64; //Mass of the object
                 let distance = movement / mass; //Distance travelled (this is an Aristotelian universe, where force = mass *
                                                 // velocity)
                 sys.get_o(obj).get_location().move_towards(*val, distance); //Moves towards the location
-                sys.get_o(obj)
-                    .resources_mut()
-                    .change_amt(crate::resources::constants::MOVEMENT, 0); //Resets the movement generated to zero
+                sys.get_o(obj).resources_mut().change_amt(crate::resources::constants::MOVEMENT, 0); //Resets the movement generated to zero
                 if (*sys.get_o(obj).get_location()).eq(val) {
                     //If we got there...
                     return InstrRes::Success(pos + 1); //We've succeeded! Onto
@@ -189,7 +176,28 @@ impl Instr {
                 sys.get_o(*val2).resources_mut().gain_unsigned(val1); //Otherwise, gain extra resources.
                 InstrRes::Success(pos + 1) //We've succeeded!
             }
-            Instr::Sticky => InstrRes::Continue, //Sticks to the instruction
+            Instr::Grab(val1, val2) => {
+                //Transfers resources to another object.
+                let res = Instr::MoveTo(*val2).exe(obj, pos, sys, rss, cmp); //Moves to the object.
+                match res {
+                    InstrRes::Fail(val) => return InstrRes::Fail(val), //If we fail, fail.
+                    InstrRes::Success(_) => {}                         /* If we succeed,
+                                                                         * continue on in the
+                                                                         * function. */
+                    InstrRes::Continue => return InstrRes::Continue, /* If we aren't done, continue moving instead. */
+                }
+                let mut temp = rss.get_transfer_costs().iter(); //Generates transfer cost.
+                let transfer_cap_cost: u128 = val1.iter().map(|x| x * temp.next().unwrap()).sum(); //Sums transfer costs up.
+                let mut total_cost = val1.clone(); //Generates a clone, that we can manipulate.
+                total_cost[crate::resources::constants::TRANSFER.get()] += transfer_cap_cost; //Adds the cost of transferring resources on.
+                if !sys.get_o(*val2).resources_mut().spend_unsigned(&total_cost) {
+                    //Attempts to spend the resources. If it fails...
+                    return InstrRes::Fail("Not enough resources!".to_string()); //fail!
+                }
+                sys.get_o(obj).resources_mut().gain_unsigned(val1); //Otherwise, gain extra resources.
+                InstrRes::Success(pos + 1) //We've succeeded!
+            }
+            Instr::Sticky => InstrRes::Continue,      //Sticks to the instruction
             Instr::End => InstrRes::Success(pos + 1), //immediately advances
             Instr::Fail => InstrRes::Fail("This instruction was supposed to fail.".to_string()), /* Fails */
             Instr::PerformRecipe(recipe, amt) => {
@@ -199,10 +207,7 @@ impl Instr {
                     //If we did all of them...
                     InstrRes::Success(pos + 1) //We've succeeded!
                 } else {
-                    InstrRes::Fail(format!(
-                        "We only had enough resources to do {} out of {} recipes",
-                        amt_success, amt
-                    )) //We've failed.
+                    InstrRes::Fail(format!("We only had enough resources to do {} out of {} recipes", amt_success, amt)) //We've failed.
                 }
             }
             Instr::InstallComponent(component, amt) => {
@@ -220,13 +225,7 @@ impl Instr {
             }
         }
     } //Executes instructions.
-    pub fn display(
-        &self,
-        obj: ObjectID,
-        sys: &Systems,
-        rss: &ResourceDict,
-        cmp: &Components,
-    ) -> String {
+    pub fn display(&self, obj: ObjectID, sys: &Systems, rss: &ResourceDict, cmp: &Components) -> String {
         match self {
             Instr::All(val) => {
                 let mut res: String = "Do all: [".to_string();
@@ -257,6 +256,13 @@ impl Instr {
                     sys.get_o_name(*val2)
                 )
             }
+            Instr::Grab(val1, val2) => {
+                format!(
+                    "Grab {} from {}",
+                    crate::resources::display_vec_one(rss, val1, ", "),
+                    sys.get_o_name(*val2)
+                )
+            }
             Instr::MoveTo(val) => {
                 format!("Move to {}", sys.get_o_name(*val))
             }
@@ -275,11 +281,7 @@ impl Instr {
                 format!("Perform recipe {} {} times", cmp.get_r_name(*val1), val2)
             }
             Instr::InstallComponent(val1, val2) => {
-                format!(
-                    "Installing component {} {} times",
-                    cmp.get_name(*val1),
-                    val2
-                )
+                format!("Installing component {} {} times", cmp.get_name(*val1), val2)
             }
             Instr::Sticky => "Remain here".to_string(),
             Instr::End => "Advance".to_string(),
@@ -303,13 +305,7 @@ pub enum QueueRes {
     Continue,     //This queue is in progress.
 } //The result of a queue's execution.
 impl Queue {
-    pub fn exe(
-        &mut self,
-        obj: ObjectID,
-        sys: &mut Systems,
-        rss: &ResourceDict,
-        cmp: &Components,
-    ) -> QueueRes {
+    pub fn exe(&mut self, obj: ObjectID, sys: &mut Systems, rss: &ResourceDict, cmp: &Components) -> QueueRes {
         if let Some(mut new) = self.flag {
             //If this flag has triggered...
             self.flag = None; //Reset the flag.
@@ -373,14 +369,7 @@ impl Queue {
         }
     } //Returns the color of the queue (used to help the user tell which queues have
       // failed and which haven't)
-    pub fn display(
-        &self,
-        amt_before: usize,
-        obj: ObjectID,
-        sys: &mut Systems,
-        rss: &ResourceDict,
-        cmp: &Components,
-    ) -> String {
+    pub fn display(&self, amt_before: usize, obj: ObjectID, sys: &mut Systems, rss: &ResourceDict, cmp: &Components) -> String {
         let mut res = "".to_string(); //Initializes result
         for i in 0..self.queue.len() {
             res.push_str(&format!(
@@ -432,7 +421,7 @@ pub struct Instrs {
 } //A vector of queues, basically.
 impl Instrs {
     pub fn exe(&mut self, obj: ObjectID, sys: &mut Systems, rss: &ResourceDict, cmp: &Components) {
-        let mut will_remove: Vec<bool> = vec![]; //Whether we should remove the queues.
+        let mut will_remove: Vec<bool> = Vec::new(); //Whether we should remove the queues.
         for instr in &mut self.instrs {
             //For every queue...
             if let QueueRes::Completion = instr.exe(obj, sys, rss, cmp) {
@@ -455,8 +444,8 @@ impl Instrs {
     }
     pub fn new() -> Instrs {
         Instrs {
-            instrs: vec![],
-            names: vec![],
+            instrs: Vec::new(),
+            names: Vec::new(),
         }
     }
     pub fn add(&mut self, queue: Queue, name: String) {
@@ -476,12 +465,7 @@ impl Instrs {
     pub fn display(&self, amt_before: usize) -> String {
         let mut res = "".to_string();
         for i in 0..self.instrs.len() {
-            res.push_str(&format!(
-                "{}{}: {}\n",
-                self.instrs[i].color(),
-                i + amt_before,
-                self.names[i]
-            ));
+            res.push_str(&format!("{}{}: {}\n", self.instrs[i].color(), i + amt_before, self.names[i]));
         }
         res
     } //Displays the object.
@@ -498,13 +482,13 @@ pub struct Quickie {
 impl Quickie {
     pub fn new() -> Quickie {
         Quickie {
-            dirs: vec![],
-            res: vec![],
-            del: vec![],
+            dirs: Vec::new(),
+            res: Vec::new(),
+            del: Vec::new(),
         }
     } //Initializes the structure
     pub fn exe(&mut self, obj: ObjectID, sys: &mut Systems, rss: &ResourceDict, cmp: &Components) {
-        let mut will_remove: Vec<bool> = vec![]; //Whether to remove the instructions
+        let mut will_remove: Vec<bool> = Vec::new(); //Whether to remove the instructions
         for i in 0..self.dirs.len() {
             if self.del[i] {
                 //If these are marked to be deleted...
@@ -537,22 +521,10 @@ impl Quickie {
         self.res.insert(index, InstrRes::Continue);
         self.del.insert(index, del);
     } //Adds a new function
-    pub fn display(
-        &self,
-        amt_before: usize,
-        obj: ObjectID,
-        sys: &Systems,
-        rss: &ResourceDict,
-        cmp: &Components,
-    ) -> String {
+    pub fn display(&self, amt_before: usize, obj: ObjectID, sys: &Systems, rss: &ResourceDict, cmp: &Components) -> String {
         let mut res: String = "".to_string(); //Initializes result
         for (i, line) in self.dirs.iter().enumerate() {
-            res.push_str(&format!(
-                "{}{}. {}",
-                self.color(i),
-                i + amt_before,
-                line.display(obj, sys, rss, cmp)
-            )); //Adds a few things
+            res.push_str(&format!("{}{}. {}", self.color(i), i + amt_before, line.display(obj, sys, rss, cmp))); //Adds a few things
             if self.del[i] {
                 //If it's temporary...
                 res.push_str(" (temp)"); //helpful text
@@ -589,8 +561,8 @@ pub struct Directions {
 impl Directions {
     pub fn new() -> Directions {
         Directions {
-            directions: vec![],
-            quick: vec![],
+            directions: Vec::new(),
+            quick: Vec::new(),
         }
     } //Basic new function
     pub fn directions(&mut self) -> &mut Vec<Instrs> {

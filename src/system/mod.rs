@@ -12,11 +12,7 @@ pub struct System {
 } //A (star) system.
 impl System {
     pub fn new(name: String, loc: Location) -> System {
-        System {
-            name,
-            loc,
-            objs: Vec::new(),
-        }
+        System { name, loc, objs: Vec::new() }
     } //Basic constructor
     pub fn add_obj(&mut self, id: ObjectID) {
         self.objs.push(id);
@@ -29,30 +25,17 @@ impl System {
         let mut res: String = "".to_string();
         for i in 0..self.objs.len() {
             res.push_str(sys.get_o_stat(self.objs[i]).color());
-            res.push_str(&format!(
-                "{}. {}\n",
-                i,
-                names[self.objs[i].get()]
-            ));
+            res.push_str(&format!("{}. {}\n", i, names[self.objs[i].get()]));
         }
         res
     } //Basic display function
-    pub fn display_filtered(
-        &self,
-        amt_before: usize,
-        will_display: &Vec<bool>,
-        names: &Vec<String>,
-    ) -> String {
+    pub fn display_filtered(&self, amt_before: usize, will_display: &Vec<bool>, names: &Vec<String>) -> String {
         let mut res: String = "".to_string();
         let mut i: usize = 0;
         for d in will_display {
             if *d {
                 //If we want to display this...
-                res.push_str(&format!(
-                    "{}: {}\n",
-                    i + amt_before,
-                    names[self.objs[i].get()]
-                )); //Display it
+                res.push_str(&format!("{}: {}\n", i + amt_before, names[self.objs[i].get()])); //Display it
                 i += 1; //Increment the counter
             }
         }

@@ -4,10 +4,7 @@ pub mod tick;
 use crate::object::*;
 use crate::systems::object_id::*;
 use crate::systems::system_id::*;
-use crate::{
-    component::Components, instr::Directions, location::Location, resources::ResourceDict,
-    system::*,
-};
+use crate::{component::Components, instr::Directions, location::Location, resources::ResourceDict, system::*};
 pub struct Systems {
     systems: Vec<System>,
     sys_names: Vec<String>,
@@ -29,15 +26,7 @@ impl Systems {
         self.systems.push(System::new(name.clone(), loc));
         self.sys_names.push(name);
     } //Adds a system to the list
-    pub fn add_o(
-        &mut self,
-        rss: &ResourceDict,
-        cmp: &Components,
-        dir: &mut Directions,
-        name: String,
-        loc: Location,
-        sys: SystemID,
-    ) {
+    pub fn add_o(&mut self, rss: &ResourceDict, cmp: &Components, dir: &mut Directions, name: String, loc: Location, sys: SystemID) -> ObjectID {
         let obj = Object::new(rss, cmp, name.clone(), loc, sys); //Makes a new object
         self.objects.push(obj); //Adds the object to the list
         self.obj_names.push(name); //Adds its name to the list
@@ -47,6 +36,7 @@ impl Systems {
         self.get_s(sys).add_obj(ObjectID::new(temp)); //Marks that the object
                                                       // is inside the correct
                                                       // system
+        ObjectID::new(temp) //Returns the object
     } //Adds an object to the list
     pub fn get_s(&mut self, sys: SystemID) -> &mut System {
         &mut self.systems[sys.get()]

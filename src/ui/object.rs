@@ -13,33 +13,29 @@ use crate::{
     systems::{object_id::ObjectID, system_id::SystemID},
     ui::io::*,
 };
-pub fn make_object(
-    rss: &ResourceDict,
-    cmp: &mut Components,
-    sys: &mut Systems,
-    dir: &mut Directions,
-    system: SystemID, cfg:&mut Config
-) {
+pub fn make_object(rss: &ResourceDict, cmp: &mut Components, sys: &mut Systems, dir: &mut Directions, system: SystemID, cfg: &mut Config) -> Option<ObjectID>{
     let name: String = get_str("What do you want to call your new object?", cfg); //Gets the object's name from input
     let loc = get_location(cfg); //Gets the object's location from input
     if get_from_input("Are you sure?", "Please enter true or false", cfg) {
         //
         println!("Object {} created!", name);
-        sys.add_o(rss, cmp, dir, name, loc, system);
+        let res = sys.add_o(rss, cmp, dir, name, loc, system);
         wait_for_input("Press enter to continue.", cfg);
+        Some(res)
     } else {
         println!("Object creation aborted.");
         wait_for_input("Press enter to continue.", cfg);
+        None
     }
 } //Makes an object
-pub fn object_menu(
-    rss: &ResourceDict,
-    cmp: &mut Components,
-    sys: &mut Systems,
-    obj: ObjectID,
-    dir: &mut Directions,
-    cfg:&mut Config
-) {
+pub fn new_at(
+    rss: &ResourceDict, cmp: &mut Components, sys: &mut Systems, system: SystemID, cfg: &mut Config, dir: &mut Directions, from: ObjectID,
+) -> ObjectID {
+    let name: String = get_str("What do you want to call your new object?", cfg); //Gets the object's name from input
+    let loc = *sys.get_o(from).get_location_stat();
+    sys.add_o(rss, cmp, dir, name, loc, system)
+}
+pub fn object_menu(rss: &ResourceDict, cmp: &mut Components, sys: &mut Systems, obj: ObjectID, dir: &mut Directions, cfg: &mut Config) {
     loop {
         println!("Displaying...");
         println!("Viewing {} ", sys.get_o(obj).name());
@@ -64,29 +60,28 @@ pub fn object_menu(
         let len: usize = 10;
         let response: usize = get_from_input_valid("", "Please enter a valid input.", cfg, |x| x < &len); //Gets response
         match response {
-            0 => sys.tick(rss, cmp, dir),                     //Advance 1 tick
-            1 => break,                                       //Break out of menu
-            2 => add_component(cmp, sys.get_o(obj), cfg),          //Add component
-            3 => remove_component(cmp, sys.get_o(obj), cfg),       //Remove component
-            4 => recipe::perform_recipe(cmp, sys.get_o(obj), cfg), //Perform recipe
-            5 => transfer(rss, sys, obj, cfg),                     //Transfer resources
-            6 => details(rss, cmp, cfg),                           //Gather details
-            7 => recipe::r_details(rss, cmp, cfg),                 //Gather recipe details
-            8 => instr::instrs_menu(sys, obj, cmp, rss, dir.instrs(obj), cfg), //Enter instructions menu
-            9 => quickie(rss, cmp, sys, dir.quickie(obj), obj, cfg), //Enter quick instructions menu
+            0 => sys.tick(rss, cmp, dir),                                      //Advance 1 tick
+            1 => break,                                                        //Break out of menu
+            2 => add_component(cmp, sys.get_o(obj), cfg),                      //Add component
+            3 => remove_component(cmp, sys.get_o(obj), cfg),                   //Remove component
+            4 => recipe::perform_recipe(cmp, sys.get_o(obj), cfg),             //Perform recipe
+            5 => transfer(rss, sys, obj, cfg),                                 //Transfer resources
+            6 => details(rss, cmp, cfg),                                       //Gather details
+            7 => recipe::r_details(rss, cmp, cfg),                             //Gather recipe details
+            8 => instr::instrs_menu(sys, obj, cmp, rss, dir.instrs(obj), cfg), /* Enter instructions menu */
+            9 => quickie(rss, cmp, sys, dir.quickie(obj), obj, cfg),           /* Enter quick */
+            // instructions
+            // menu
             _ => {
                 io::get_str("Something went horribly wrong!", cfg);
             } //Something went wrong!
         };
     }
 }
-pub fn transfer(rss: &ResourceDict, sys: &mut Systems, obj: ObjectID, cfg:&mut Config) {
+pub fn transfer(rss: &ResourceDict, sys: &mut Systems, obj: ObjectID, cfg: &mut Config) {
     let temp = sys.get_o(obj).resources().get_currs().clone(); //Gets current resources
     let mut max = temp.iter(); //Gets maximum resources
-    let transfer_cap = sys
-        .get_o(obj)
-        .resources()
-        .get_curr(crate::resources::constants::TRANSFER); //Gets transfer capacity
+    let transfer_cap = sys.get_o(obj).resources().get_curr(crate::resources::constants::TRANSFER); //Gets transfer capacity
     let total_cap: Vec<u128> = resources::get_transfer_max(rss, transfer_cap)
         .into_iter()
         .map(|x| {
@@ -122,10 +117,11 @@ pub fn transfer(rss: &ResourceDict, sys: &mut Systems, obj: ObjectID, cfg:&mut C
         wait_for_input("Press enter to continue:", cfg);
         return;
     }
-    if !sys.get_o(obj).resources_mut().rmv_res(
-        crate::resources::constants::TRANSFER,
-        amt * rss.get_transfer_costs()[resource.get()],
-    ) {
+    if !sys
+        .get_o(obj)
+        .resources_mut()
+        .rmv_res(crate::resources::constants::TRANSFER, amt * rss.get_transfer_costs()[resource.get()])
+    {
         sys.get_o(obj).resources_mut().add_res(resource, amt); //Undoes it
         println!("The transfer failed somehow!");
         wait_for_input("Press enter to continue:", cfg);
@@ -135,15 +131,27 @@ pub fn transfer(rss: &ResourceDict, sys: &mut Systems, obj: ObjectID, cfg:&mut C
     println!("{} resources were successfully transferred!", amt); //Helpful message
     wait_for_input("Press enter to continue:", cfg); //Waits
 }
-pub fn get_object(sys: &Systems, curr_sys: SystemID, cfg:&mut Config) -> ObjectID {
-    println!(
-        "{}",
-        sys.get_s_stat(curr_sys).display(sys.get_o_names(), sys)
-    ); //Displays all objects in system
-    let input: usize =
-        get_from_input_valid("Enter the object: ", "Please enter a valid number", cfg, |x| {
-            x < &sys.get_s_stat(curr_sys).get_objs().len()
+pub fn get_object(sys: &Systems, system: SystemID, cfg: &mut Config) -> Option<ObjectID> {
+    loop{
+        println!("{}", sys.get_s_stat(system).display(sys.get_o_names(), sys)); //Displays all objects in system
+        let input: MenuRes = get_from_input_valid("Enter the object: ", "Please enter a valid number", cfg, |x:&MenuRes| {
+            x.in_bounds(&sys.get_s_stat(system).get_objs().len())
         }); //Gets input
-    return sys.get_s_stat(curr_sys).get_objs()[input]; //Returns the object
-                                                       // based on the input
+        let res = match input{
+            MenuRes::Enter(v) => Some(sys.get_s_stat(system).get_objs()[v]),
+            MenuRes::Exit => None,
+            MenuRes::Del => None,
+            MenuRes::Paste => {
+                if let Clipboard::Object(val) = &cfg.cpb{
+                    return Some(*val);
+                } else {
+                    wait_for_input(&format!("{}You can't paste that here!", ansi::RED), cfg);
+                    continue;
+                }
+            }
+            _ => continue
+        };
+        
+        return res;
+    }
 }

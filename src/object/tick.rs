@@ -22,8 +22,7 @@ impl Object {
             return;
         } //If there's no population, don't do any of this
         let housing: u128 = self.resources.get_cap(constants::POPULATION); //Population capacity
-        let growth: f64 = (pops as f64)
-            * (1.0 + MAX_GROWTH * ((housing as f64 - pops as f64) / housing as f64) as f64); //Amount of projected growth
+        let growth: f64 = (pops as f64) * (1.0 + MAX_GROWTH * ((housing as f64 - pops as f64) / housing as f64) as f64); //Amount of projected growth
         let grown: u128 = rand::rand_round(growth); //Amount grown; rounded
         self.resources.change_amt(constants::POPULATION, grown); //Finalizes changes
     } //Grows the population.
@@ -32,17 +31,12 @@ impl Object {
         self.resources.add_res(constants::PRODUCTION, pops); //Produces 1
                                                              // production
     } //The population's benefits.
-    pub const UPKEEP_RSS_POPS: &'static [(ResourceID, f64)] = &[
-        (constants::AIR, 1.0),
-        (constants::WATER, 1.0),
-        (constants::FOOD, 1.0),
-    ];
+    pub const UPKEEP_RSS_POPS: &'static [(ResourceID, f64)] = &[(constants::AIR, 1.0), (constants::WATER, 1.0), (constants::FOOD, 1.0)];
     pub fn pop_upkeep(&mut self) -> bool {
         let mut satisfied: bool = true;
         for (rss, fct) in Object::UPKEEP_RSS_POPS {
             //For each bit of upkeep...
-            let upkeep =
-                rand::rand_round(self.resources.get_curr(constants::POPULATION) as f64 * fct); //Gets the amount of upkeep required
+            let upkeep = rand::rand_round(self.resources.get_curr(constants::POPULATION) as f64 * fct); //Gets the amount of upkeep required
             if !self.resources.rmv_res(*rss, upkeep) {
                 //If we don't have enough of the resource, and can't afford all of our
                 // upkeep...
@@ -61,15 +55,13 @@ impl Object {
             return;
         }
         let housing: u128 = self.resources.get_cap(constants::BIOMASS);
-        let growth: f64 = (pops as f64)
-            * (1.0 + MAX_GROWTH * ((housing as f64 - pops as f64) / housing as f64) as f64);
+        let growth: f64 = (pops as f64) * (1.0 + MAX_GROWTH * ((housing as f64 - pops as f64) / housing as f64) as f64);
         let grown: u128 = rand::rand_round(growth);
         self.resources.change_amt(constants::BIOMASS, grown);
     } //Same as grow_pops
     pub fn plant_benefits(&mut self) {
         let pops: u128 = self.resources.get_curr(constants::BIOMASS);
-        self.resources
-            .add_res(constants::AIR, rand::rand_round(pops as f64 / 10.0));
+        self.resources.add_res(constants::AIR, rand::rand_round(pops as f64 / 10.0));
     } //Same as pop_benefits
     pub const UPKEEP_RSS_PLANTS: &'static [(ResourceID, f64)] = &[(constants::WATER, 0.05)];
     pub fn plant_upkeep(&mut self) -> bool {
