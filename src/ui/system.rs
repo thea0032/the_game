@@ -8,12 +8,12 @@ use super::object::get_object;
 pub fn system_menu(rss: &ResourceDict, cmp: &mut Components, sys: &mut Systems, system: SystemID, dir: &mut Directions, cfg: &mut Config) {
     loop {
         println!("Viewing {}", sys.get_s_name(system));
-        print!("{}", ansi::GREEN);
-        cfg.tick().print_if(". End turn; wait a tick");
-        println!("{}", ansi::YELLOW);
-        cfg.quit().print_if(". Go back");
-        cfg.new_key().print_if(". Create a new object");
-        println!("{}", ansi::CYAN);
+        let mut ctx = cfg.generate_context();
+        let mut dis = cfg.generate_display();
+        cfg.update_context(Config::QUIT, Some("exit to systems menu".to_string()), &mut ctx, &mut dis);
+        cfg.update_context(Config::DELETE, None, &mut ctx, &mut dis);
+        cfg.update_context(Config::NEW, Some("new object".to_string()), &mut ctx, &mut dis);
+        println!("{}", cfg.display(ctx, dis));
         println!("{}", sys.get_s_stat(system).display(sys.get_o_names(), sys));
         print!("{}", ansi::RESET); //Print statements are self-explanatory
         let response: MenuRes = get_from_input_valid("", "Please enter a valid input.", cfg, |x: &MenuRes| {

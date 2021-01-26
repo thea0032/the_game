@@ -93,6 +93,13 @@ impl Components {
         }
         x
     }
+    pub fn display_one(&self, rss: &ResourceDict, id:ComponentID) -> String {
+        let mut x: String = "".to_string();
+        x.push_str(&format!("{}: {}", id.id(), &self.names[id.id()]));
+        x.push('\n');
+        x.push_str(&self.list[id.id()].display(rss));
+        x
+    }
     pub fn display_r(&self) -> String {
         let mut x: String = "".to_string();
         for i in 0..self.recipe_list.len() {
@@ -121,6 +128,13 @@ impl Components {
             x.push_str(&self.recipe_list[i].display(rss));
             x.push('\n');
         }
+        x
+    }
+    pub fn display_one_r(&self, rss: &ResourceDict, i:RecipeID) -> String {
+        let mut x: String = "".to_string();
+        x.push_str(&format!("{}: {}", i.id, &self.recipe_names[i.id]));
+        x.push('\n');
+        x.push_str(&self.recipe_list[i.id].display(rss));
         x
     }
     pub fn len(&self) -> usize {
@@ -223,4 +237,7 @@ impl RecipeID {
     pub fn new(id: usize) -> RecipeID {
         RecipeID { id }
     } //new
+    pub fn id(&self) -> usize{
+        self.id
+    } 
 }

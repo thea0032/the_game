@@ -1,4 +1,5 @@
 use ansi::{GREEN, YELLOW};
+use info::information;
 use location::get_location;
 use quickie::quickie;
 use resources::get_resource_filtered;
@@ -42,24 +43,19 @@ pub fn object_menu(rss: &ResourceDict, cmp: &mut Components, sys: &mut Systems, 
         println!("Viewing {} ", sys.get_o(obj).name());
         println!("{}", sys.get_o(obj).display(rss, cmp));
         println!("Options: ");
-        print!("{}", ansi::GREEN);
-        cfg.tick().print_if(". End turn; wait a tick", );
-        print!("{}", ansi::YELLOW);
-        cfg.quit().print_if(". Break out of object menu");
-        print!("{}", ansi::CYAN);
-        cfg.new_key().print_if(". Add a component");
-        cfg.delete().print_if(". Remove a component");
+        let mut ctx = cfg.generate_context();
+        let mut dis = cfg.generate_display();
+        cfg.update_context(Config::QUIT, Some("exit to system menu".to_string()), &mut ctx, &mut dis);
+        cfg.update_context(Config::NEW, Some("install a component".to_string()), &mut ctx, &mut dis);
+        cfg.update_context(Config::DELETE, Some("remove a component".to_string()), &mut ctx, &mut dis);
+        println!("{}", cfg.display(ctx, dis));
         println!("0. Use a recipe ");
         println!("1. Transfer resources to another object: ");
-        println!("{}", ansi::MAGENTA);
-        println!("2. Get detailed information on components ");
-        println!("3. Get detailed information on recipes ");
         println!("{}", ansi::BLUE);
-        println!("4. Enter instruction menu");
-        println!("5. Enter quick instruction menu (all quick instructions are done every turn");
+        println!("2. Enter instruction menu");
+        println!("3. Enter quick instruction menu (all quick instructions are done every turn");
         print!("{}", ansi::RESET); //Displays options
-        let len: usize = 6;
-        let v:Vec<String> = vec!["".to_string(), "".to_string()];
+        let len: usize = 4;
         let response: MenuRes = get_from_input_valid("", "Please enter a valid input.", cfg, |x:&MenuRes| x.in_bounds(&len)); //Gets response
         match response {
             MenuRes::Tick => sys.tick(rss, cmp, dir),                                      //Advance 1 tick
@@ -68,10 +64,8 @@ pub fn object_menu(rss: &ResourceDict, cmp: &mut Components, sys: &mut Systems, 
             MenuRes::Del => remove_component(cmp, sys.get_o(obj), cfg),                   //Remove component
             MenuRes::Enter(0) => recipe::perform_recipe(cmp, sys.get_o(obj), cfg),             //Perform recipe
             MenuRes::Enter(1) => transfer(rss, sys, obj, cfg),                                 //Transfer resources
-            MenuRes::Enter(2) => details(rss, cmp, cfg),                                       //Gather details
-            MenuRes::Enter(3) => recipe::r_details(rss, cmp, cfg),                             //Gather recipe details
-            MenuRes::Enter(4) => instr::instrs_menu(sys, obj, cmp, rss, dir.instrs(obj), cfg), /* Enter instructions menu */
-            MenuRes::Enter(5) => quickie(rss, cmp, sys, dir.quickie(obj), obj, cfg),           /* Enter quick */
+            MenuRes::Enter(2) => instr::instrs_menu(sys, obj, cmp, rss, dir.instrs(obj), cfg), /* Enter instructions menu */
+            MenuRes::Enter(3) => quickie(rss, cmp, sys, dir.quickie(obj), obj, cfg),           /* Enter quick */
             // instructions
             // menu
             MenuRes::Copy => {
@@ -107,9 +101,12 @@ pub fn object_menu(rss: &ResourceDict, cmp: &mut Components, sys: &mut Systems, 
                     }
                 }
             }
-            _ => {
-                io::get_str("Something went horribly wrong!", cfg);
-            } //Something went wrong!
+            MenuRes::Info => {
+                information(rss, cmp, cfg);
+            },
+            MenuRes::Enter(_) => {
+                get_str("Something went horribly wrong!", cfg);
+            }
         };
     }
 }
