@@ -43,7 +43,7 @@ pub fn system_menu(rss: &ResourceDict, cmp: &mut Components, sys: &mut Systems, 
         };
     }
 }
-pub fn paste_object(rss: &ResourceDict, cmp: &mut Components, sys: &mut Systems, system:SystemID, dir: &mut Directions, cfg: &mut Config, t:&Template, ) {
+pub fn paste_object(rss: &ResourceDict, cmp: &mut Components, sys: &mut Systems, system:SystemID, dir: &mut Directions, cfg: &mut Config, t:&Template) {
     println!("Enter the source object:");
     let o = get_object(sys, system, cfg);
     if let Some(source) = o{
@@ -62,13 +62,39 @@ pub fn paste_object(rss: &ResourceDict, cmp: &mut Components, sys: &mut Systems,
         }
     }
 }
-pub fn select_object_filtered(sys: &Systems, id: SystemID, filter: Vec<bool>, cfg: &mut Config) -> ObjectID {
-    println!("{}", sys.get_s_stat(id).display_filtered(0, &filter, sys.get_o_names()));
-    let len = filter.iter().filter(|x| **x).count();
-    let input: usize = get_from_input_valid("Enter the object you want: ", "Please enter a valid id", cfg, |x| x < &len);
-    sys.get_s_stat(id).get_objs()[crate::extra_bits::filter(input, &filter)]
+pub fn select_object_filtered(sys: &Systems, id: SystemID, filter: Vec<bool>, cfg: &mut Config) -> Option<ObjectID> {
+    loop{
+        println!("{}", sys.get_s_stat(id).display_filtered(0, &filter, sys.get_o_names()));
+        let len = filter.iter().filter(|x| **x).count();
+        let input: MenuRes = get_from_input_valid("Enter the object you want: ", "Please enter a valid id", cfg, |x:&MenuRes| x.in_bounds(&len));
+        match input{
+            MenuRes::Enter(v) => {
+                return Some(sys.get_s_stat(id).get_objs()[crate::extra_bits::filter(v, &filter)])
+            }
+            MenuRes::Exit | MenuRes::Del => {
+                return None
+            }
+            MenuRes::Paste => {
+                match &cfg.cpb {
+                    Clipboard::Object(val) => {
+                        if filter[val.get()]{
+                            return Some(*val);
+                        } else {
+                            wait_for_input(&format!("{}You can't paste that there!", ansi::RED), cfg);
+                        }
+                    }
+                    _ => {
+                        wait_for_input(&format!("{}You can't paste that there!", ansi::RED), cfg);
+                    }
+                }
+            }
+            _ => {
+                wait_for_input(&format!("{}Please enter a valid entry", ansi::RED), cfg);
+            }
+        }
+    }
 }
-pub fn select_object_docked(sys: &Systems, id: ObjectID, cfg: &mut Config) -> ObjectID {
+pub fn select_object_docked(sys: &Systems, id: ObjectID, cfg: &mut Config) -> Option<ObjectID> {
     let curr_system_id = sys.get_o_sys(id);
     let curr_location = *sys.get_o_stat(id).get_location_stat();
     let filter: Vec<bool> = sys
@@ -78,12 +104,30 @@ pub fn select_object_docked(sys: &Systems, id: ObjectID, cfg: &mut Config) -> Ob
         .collect();
     select_object_filtered(sys, curr_system_id, filter, cfg)
 }
-pub fn get_system(sys: &Systems, cfg: &mut Config) -> SystemID {
-    println!("{}", sys.display());
-    SystemID::new(get_from_input_valid(
-        "Enter the system you want",
-        "Please enter a valid number",
-        cfg,
-        |x| x < &sys.len(),
-    ))
+pub fn get_system(sys: &Systems, cfg: &mut Config) -> Option<SystemID> {
+    loop{
+        println!("{}", sys.display());
+        let input:MenuRes = get_from_input_valid(
+            "Enter the system you want",
+            "Please enter a valid entry",
+            cfg,
+            |x:&MenuRes| x.in_bounds(&sys.len()),
+        );
+        match input{
+            MenuRes::Enter(v) => {return Some(SystemID::new(v));}
+            MenuRes::Exit |
+            MenuRes::Del => {
+                return None;
+            }
+            MenuRes::Paste => {
+                match &cfg.cpb{
+                    Clipboard::SystemID(v) => return Some(*v),
+                    _ => {wait_for_input(&format!("{}You can't paste that there!", ansi::RED), cfg)}
+                }
+            }
+            _ => {
+                wait_for_input(&format!("{}Please enter a valid entry", ansi::RED), cfg);
+            }
+        }
+    }
 }

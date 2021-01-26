@@ -143,7 +143,7 @@ pub fn transfer(rss: &ResourceDict, sys: &mut Systems, obj: ObjectID, cfg: &mut 
         cfg,
         |x| x <= &total_cap[resource.get()],
     );
-    let other = select_object_docked(sys, obj, cfg);
+    let other = if let Some(val) = select_object_docked(sys, obj, cfg){val} else {return};
     if !sys.get_o(obj).resources_mut().rmv_res(resource, amt) {
         println!("The transfer failed somehow!");
         wait_for_input("Press enter to continue:", cfg);

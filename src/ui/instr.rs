@@ -76,12 +76,13 @@ pub fn make_move(cfg: &mut Config) -> Instr {
     Instr::Move(get_location(cfg)) //Gets a location
 } //Makes a move instruction from input
 pub fn make_jump(sys: &Systems, cfg: &mut Config) -> Instr {
-    Instr::Jump(get_system(sys, cfg)) //Gets a system
+    Instr::Jump(if let Some(val) = get_system(sys, cfg){val} else {return Instr::Fail}) //Gets a system
 } //Makes a jump instruction from input
 pub fn make_transfer(rss: &ResourceDict, sys: &Systems, cfg: &mut Config) -> Instr {
     let mut input: Vec<u128> = extra_bits::fill(rss.len(), 0);
     get_rss(rss, &mut input, cfg);
-    let o = get_object(sys, get_system(sys, cfg), cfg);
+    let system = if let Some(system) = get_system(sys, cfg){system} else {return Instr::Fail};
+    let o = get_object(sys, system, cfg);
     if let Some(val) = o{
         Instr::Transfer(input, val)
     } else {
@@ -91,7 +92,8 @@ pub fn make_transfer(rss: &ResourceDict, sys: &Systems, cfg: &mut Config) -> Ins
 pub fn make_grab(rss: &ResourceDict, sys: &Systems, cfg: &mut Config) -> Instr {
     let mut input: Vec<u128> = extra_bits::fill(rss.len(), 0);
     get_rss(rss, &mut input, cfg);
-    let o = get_object(sys, get_system(sys, cfg), cfg);
+    let system = if let Some(system) = get_system(sys, cfg){system} else {return Instr::Fail};
+    let o = get_object(sys, system, cfg);
     if let Some(val) = o{
         Instr::Grab(input, val)
     } else {
@@ -99,7 +101,8 @@ pub fn make_grab(rss: &ResourceDict, sys: &Systems, cfg: &mut Config) -> Instr {
     }
 } //Makes a grab instruction from input
 pub fn make_moveto(sys: &Systems, cfg: &mut Config) -> Instr {
-    let o = get_object(sys, get_system(sys, cfg), cfg);
+    let system = if let Some(system) = get_system(sys, cfg){system} else {return Instr::Fail};
+    let o = get_object(sys, system, cfg);
     if let Some(val) = o{
         Instr::MoveTo(val)
     } else {
@@ -361,7 +364,9 @@ pub fn parse_options(
             *val = get_location(cfg); //Updates location
         }
         Instr::Jump(val) => {
-            *val = get_system(sys, cfg); //Updates system
+            if let Some(s) = get_system(sys, cfg){
+                *val = s; //Updates system
+            }
         }
         Instr::Transfer(val, val2) => {
             match input {
@@ -369,8 +374,10 @@ pub fn parse_options(
                     get_rss(rss, val, cfg) //Updates resources to be transferred
                 }
                 1 => {
-                    if let Some(val) = get_object(sys, get_system(sys, cfg), cfg){
-                        *val2 = val; //Updates object
+                    if let Some(val) = get_system(sys, cfg){
+                        if let Some(val) = get_object(sys, val, cfg){
+                            *val2 = val; //Updates object
+                        }
                     }
                 }
                 _ => {}
@@ -382,16 +389,20 @@ pub fn parse_options(
                     get_rss(rss, val, cfg) //Updates resources to be transferred
                 }
                 1 => {
-                    if let Some(val) = get_object(sys, get_system(sys, cfg), cfg){
-                        *val2 = val; //Updates object
+                    if let Some(val) = get_system(sys, cfg){
+                        if let Some(val) = get_object(sys, val, cfg){
+                            *val2 = val; //Updates object
+                        }
                     }
                 }
                 _ => {}
             }
         }
         Instr::MoveTo(val) => {
-            if let Some(v) = get_object(sys, get_system(sys, cfg), cfg){
-                *val = v; //Updates object
+            if let Some(system) = get_system(sys, cfg){
+                if let Some(obj) = get_object(sys, system, cfg){
+                    *val = obj; //Updates object
+                }
             }
         }
         Instr::If(_, _, _) => {
