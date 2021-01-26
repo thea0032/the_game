@@ -1,6 +1,7 @@
+use info::information;
 use object_id::ObjectID;
 
-use crate::{component::*, object::template::ObjectTemplate, resources::*, systems::*, ui::{object::*, *}};
+use crate::{component::*, object::template::Template, resources::*, systems::*, ui::{object::*, *}};
 use crate::{instr::Directions, systems::system_id::SystemID, ui::io::*};
 
 use super::object::get_object;
@@ -37,11 +38,12 @@ pub fn system_menu(rss: &ResourceDict, cmp: &mut Components, sys: &mut Systems, 
             },
             MenuRes::Del => {
 
-            }
+            },
+            MenuRes::Info => information(rss, cmp, cfg)
         };
     }
 }
-pub fn paste_object(rss: &ResourceDict, cmp: &mut Components, sys: &mut Systems, system:SystemID, dir: &mut Directions, cfg: &mut Config, t:&ObjectTemplate, ) {
+pub fn paste_object(rss: &ResourceDict, cmp: &mut Components, sys: &mut Systems, system:SystemID, dir: &mut Directions, cfg: &mut Config, t:&Template, ) {
     println!("Enter the source object:");
     let o = get_object(sys, system, cfg);
     if let Some(source) = o{

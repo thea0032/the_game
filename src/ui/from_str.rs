@@ -74,6 +74,7 @@ pub enum MenuRes {
     New,
     Copy,
     Paste,
+    Info,
 } //
 impl FromString for MenuRes {
     fn from_string(s: &str, cfg: &mut Config) -> Option<Self> {
@@ -89,6 +90,8 @@ impl FromString for MenuRes {
             Some(MenuRes::Copy)
         } else if s == cfg.paste().id() {
             Some(MenuRes::Paste)
+        } else if s == cfg.info().id() {
+            Some(MenuRes::Info)
         } else if let Ok(val) = usize::from_str(s) {
             Some(MenuRes::Enter(val))
         } else {

@@ -459,6 +459,9 @@ impl Instrs {
     pub fn get_queue(&mut self, id: usize) -> &mut Queue {
         &mut self.instrs[id]
     } //Gets the queue based on the position
+    pub fn get_queues(& self) -> &Vec<Queue> {
+        & self.instrs
+    } //Gets the queue based on the position
     pub fn len(&self) -> usize {
         self.instrs.len()
     } //Gets the length.
@@ -473,6 +476,7 @@ impl Instrs {
         self.names[id].clone()
     } //Gets the name.
 }
+#[derive(Clone)]
 pub struct Quickie {
     dirs: Vec<Instr>,   //The directions
     res: Vec<InstrRes>, //The last results of the instruction
@@ -487,6 +491,15 @@ impl Quickie {
             del: Vec::new(),
         }
     } //Initializes the structure
+    pub fn get_dirs(&self) -> &Vec<Instr>{
+        return &self.dirs;
+    }
+    pub fn get_res(&self) -> &Vec<InstrRes>{
+        return &self.res;
+    }
+    pub fn get_del(&self) -> &Vec<bool>{
+        return &self.del;
+    }
     pub fn exe(&mut self, obj: ObjectID, sys: &mut Systems, rss: &ResourceDict, cmp: &Components) {
         let mut will_remove: Vec<bool> = Vec::new(); //Whether to remove the instructions
         for i in 0..self.dirs.len() {

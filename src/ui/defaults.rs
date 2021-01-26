@@ -6,3 +6,4 @@ pub const NEW: &str = "n";
 pub const SEP: &str = ";";
 pub const COPY: &str = "c";
 pub const PASTE: &str = "v";
+pub const INFO: &str = "i";

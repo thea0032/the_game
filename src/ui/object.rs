@@ -1,3 +1,4 @@
+use ansi::{GREEN, YELLOW};
 use location::get_location;
 use quickie::quickie;
 use resources::get_resource_filtered;
@@ -41,37 +42,71 @@ pub fn object_menu(rss: &ResourceDict, cmp: &mut Components, sys: &mut Systems, 
         println!("Viewing {} ", sys.get_o(obj).name());
         println!("{}", sys.get_o(obj).display(rss, cmp));
         println!("Options: ");
-        println!("{}", ansi::GREEN);
-        println!("0. End turn; wait a tick");
-        println!("{}", ansi::YELLOW);
-        println!("1. Break out of object menu");
-        println!("{}", ansi::CYAN);
-        println!("2. Add a component ");
-        println!("3. Remove a component");
-        println!("4. Use a recipe ");
-        println!("5. Transfer resources to another object: ");
+        print!("{}", ansi::GREEN);
+        cfg.tick().print_if(". End turn; wait a tick", );
+        print!("{}", ansi::YELLOW);
+        cfg.quit().print_if(". Break out of object menu");
+        print!("{}", ansi::CYAN);
+        cfg.new_key().print_if(". Add a component");
+        cfg.delete().print_if(". Remove a component");
+        println!("0. Use a recipe ");
+        println!("1. Transfer resources to another object: ");
         println!("{}", ansi::MAGENTA);
-        println!("6. Get detailed information on components ");
-        println!("7. Get detailed information on recipes ");
+        println!("2. Get detailed information on components ");
+        println!("3. Get detailed information on recipes ");
         println!("{}", ansi::BLUE);
-        println!("8. Enter instruction menu");
-        println!("9. Enter quick instruction menu (all quick instructions are done every turn");
+        println!("4. Enter instruction menu");
+        println!("5. Enter quick instruction menu (all quick instructions are done every turn");
         print!("{}", ansi::RESET); //Displays options
-        let len: usize = 10;
-        let response: usize = get_from_input_valid("", "Please enter a valid input.", cfg, |x| x < &len); //Gets response
+        let len: usize = 6;
+        let v:Vec<String> = vec!["".to_string(), "".to_string()];
+        let response: MenuRes = get_from_input_valid("", "Please enter a valid input.", cfg, |x:&MenuRes| x.in_bounds(&len)); //Gets response
         match response {
-            0 => sys.tick(rss, cmp, dir),                                      //Advance 1 tick
-            1 => break,                                                        //Break out of menu
-            2 => add_component(cmp, sys.get_o(obj), cfg),                      //Add component
-            3 => remove_component(cmp, sys.get_o(obj), cfg),                   //Remove component
-            4 => recipe::perform_recipe(cmp, sys.get_o(obj), cfg),             //Perform recipe
-            5 => transfer(rss, sys, obj, cfg),                                 //Transfer resources
-            6 => details(rss, cmp, cfg),                                       //Gather details
-            7 => recipe::r_details(rss, cmp, cfg),                             //Gather recipe details
-            8 => instr::instrs_menu(sys, obj, cmp, rss, dir.instrs(obj), cfg), /* Enter instructions menu */
-            9 => quickie(rss, cmp, sys, dir.quickie(obj), obj, cfg),           /* Enter quick */
+            MenuRes::Tick => sys.tick(rss, cmp, dir),                                      //Advance 1 tick
+            MenuRes::Exit => break,                                                        //Break out of menu
+            MenuRes::New => add_component(cmp, sys.get_o(obj), cfg),                      //Add component
+            MenuRes::Del => remove_component(cmp, sys.get_o(obj), cfg),                   //Remove component
+            MenuRes::Enter(0) => recipe::perform_recipe(cmp, sys.get_o(obj), cfg),             //Perform recipe
+            MenuRes::Enter(1) => transfer(rss, sys, obj, cfg),                                 //Transfer resources
+            MenuRes::Enter(2) => details(rss, cmp, cfg),                                       //Gather details
+            MenuRes::Enter(3) => recipe::r_details(rss, cmp, cfg),                             //Gather recipe details
+            MenuRes::Enter(4) => instr::instrs_menu(sys, obj, cmp, rss, dir.instrs(obj), cfg), /* Enter instructions menu */
+            MenuRes::Enter(5) => quickie(rss, cmp, sys, dir.quickie(obj), obj, cfg),           /* Enter quick */
             // instructions
             // menu
+            MenuRes::Copy => {
+                cfg.cpb = Clipboard::Template(sys.get_o(obj).to_template(cmp, rss, "pasted template".to_string()));
+            },
+            MenuRes::Paste => {
+                match &cfg.cpb{
+                    Clipboard::Template(_) => {}
+                    Clipboard::Object(_) => {}
+                    Clipboard::Instrs(val) => {
+                        for line in val.get_queues(){
+                            dir.instrs(obj).add(line.clone(), "pasted queue".to_string(), );
+                        }
+                        wait_for_input(&format!("{}Queue pasted!", ansi::GREEN), cfg);
+                    }
+                    Clipboard::Queue(val) => {
+                        dir.instrs(obj).add(val.clone(), "pasted queue".to_string());
+                        wait_for_input(&format!("{}Queue pasted!", ansi::GREEN), cfg);
+                    }
+                    Clipboard::Instr(val, del) => {
+                        dir.quickie(obj).ins(0, val.clone(), del.clone());
+                        wait_for_input(&format!("{}Queue pasted!", ansi::GREEN), cfg);
+                    }
+                    Clipboard::Quickie(val) => {
+                        for (i, line) in val.get_dirs().iter().enumerate(){
+                            dir.quickie(obj).ins(0, line.clone(), val.get_del()[i]);
+                        }
+                        wait_for_input(&format!("{}Queue pasted!", ansi::GREEN), cfg);
+                    }
+                    Clipboard::Resources(_) => {}
+                    _ => {
+                        wait_for_input(&format!("{}You can't paste that there!", ansi::RED), cfg);
+                    }
+                }
+            }
             _ => {
                 io::get_str("Something went horribly wrong!", cfg);
             } //Something went wrong!

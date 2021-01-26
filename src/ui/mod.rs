@@ -15,6 +15,7 @@ pub mod resources;
 pub mod system;
 pub mod config;
 pub mod clipboard;
+pub mod info;
 
 use from_str::{BooleanDefNo, InBounds};
 
@@ -26,8 +27,14 @@ use self::{clipboard::Clipboard, config::Config, from_str::MenuRes};
 pub fn menu(rss: &ResourceDict, cmp: &mut Components, sys: &mut Systems, dir: &mut Directions, cfg: &mut Config) {
     loop {
         println!("{}", ansi::RESET); //Resets the coloring
-        cfg.tick().print_if(". End turn; wait a tick");
-        cfg.quit().print_if(". Quit (the game)");
+        let mut ctx = cfg.generate_context();
+        let mut dis = cfg.generate_display();
+        cfg.update_context(Config::QUIT, Some("quit the game".to_string()), &mut ctx, &mut dis);
+        cfg.update_context(Config::NEW, None, &mut ctx, &mut dis);
+        cfg.update_context(Config::DELETE, None, &mut ctx, &mut dis);
+        cfg.update_context(Config::COPY, None, &mut ctx, &mut dis);
+        cfg.update_context(Config::PASTE, None, &mut ctx, &mut dis);
+        println!("{}", cfg.display(ctx, dis));
         println!("{}", sys.display()); //Displays options
         let response: MenuRes = get_from_input_valid("", "Please enter a valid input.", cfg, |x: &MenuRes| x.in_bounds(&sys.len())); //Gets input
         match response {

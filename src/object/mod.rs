@@ -3,7 +3,7 @@ use crate::{component::*, extra_bits};
 use crate::resources::*;
 use crate::{location::*, systems::system_id::*};
 
-use self::template::ObjectTemplate;
+use self::template::Template;
 mod component;
 mod display;
 mod tick;
@@ -47,7 +47,7 @@ impl Object {
     pub fn resources_mut(&mut self) -> &mut Resources {
         &mut self.resources
     } //Mutable getter
-    pub fn to_template(&self, cmp: &Components, rss: &ResourceDict, name:String) -> ObjectTemplate {
+    pub fn to_template(&self, cmp: &Components, rss: &ResourceDict, name:String) -> Template {
         let mut surplus:Vec<i64> = extra_bits::fill(rss.len(), 0);
         let mut storage:Vec<u128> = extra_bits::fill(rss.len(), 0);
         let mut cost:Vec<i64> = extra_bits::fill(rss.len(), 0);//initializes vectors
@@ -74,7 +74,7 @@ impl Object {
                 transfer_cost += (*item as u64) * rss.get_transfer_costs()[i] as u64;//NOTE: The casting is SAFE
             }
         }//Calculates transfer cost based on all negative costs. 
-        ObjectTemplate::new(
+        Template::new(
             self.component_amounts.clone(),
             name,
             surplus,
