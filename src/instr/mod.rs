@@ -369,13 +369,13 @@ impl Queue {
         }
     } //Returns the color of the queue (used to help the user tell which queues have
       // failed and which haven't)
-    pub fn display(&self, amt_before: usize, obj: ObjectID, sys: &mut Systems, rss: &ResourceDict, cmp: &Components) -> String {
+    pub fn display(&self, obj: ObjectID, sys: &mut Systems, rss: &ResourceDict, cmp: &Components) -> String {
         let mut res = "".to_string(); //Initializes result
         for i in 0..self.queue.len() {
             res.push_str(&format!(
                 "{}{}: {}",
                 self.color_instr(i),
-                i + amt_before,
+                i,
                 self.queue[i].display(obj, sys, rss, cmp)
             ));
             if let InstrRes::Fail(val) = &self.last_res {

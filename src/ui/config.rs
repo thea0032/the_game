@@ -162,11 +162,16 @@ impl Config {
     }
     pub fn update_context(&self, id:usize, new:Option<String>, curr:&mut Vec<String>, will_display:&mut Vec<bool>){
         match new{ 
-            Some(val) => curr[id] = val,
+            Some(val) => {curr[id] = val; will_display[id] = true;},
             None => will_display[id] = false,
         }
     }
-    pub fn display(&mut self, context:Vec<String>, will_display:Vec<bool>) -> String{
+    pub fn update_context_all(&self, will_display:&mut Vec<bool>){
+        for line in will_display{
+            *line = false;
+        }
+    }
+    pub fn display(&mut self, context:&Vec<String>, will_display:&Vec<bool>) -> String{
         let mut res:String = "".to_string();
         for (i, key) in self.keys.iter().enumerate(){
             if key.show() && will_display[i]{

@@ -34,7 +34,7 @@ pub fn menu(rss: &ResourceDict, cmp: &mut Components, sys: &mut Systems, dir: &m
         cfg.update_context(Config::DELETE, None, &mut ctx, &mut dis);
         cfg.update_context(Config::COPY, None, &mut ctx, &mut dis);
         cfg.update_context(Config::PASTE, None, &mut ctx, &mut dis);
-        println!("{}", cfg.display(ctx, dis));
+        println!("{}", cfg.display(&ctx, &dis));
         println!("{}", sys.display()); //Displays options
         
         let response: MenuRes = get_from_input_valid("", "Please enter a valid input.", cfg, |x: &MenuRes| x.in_bounds(&sys.len())); //Gets input

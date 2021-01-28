@@ -1,3 +1,4 @@
+
 use crate::{
     component::Components,
     extra_bits,
@@ -6,7 +7,7 @@ use crate::{
     systems::{object_id::ObjectID, Systems},
 };
 
-use super::{ansi, component::{select_component_unfiltered, select_components_unfiltered}, condition::make_condition, config::Config, io::{get_from_input, get_from_input_valid, get_str, wait_for_input}, location::get_location, object::{get_object}, recipe::{select_recipe_unfiltered, select_recipes_unfiltered}, resources::get_rss, system::get_system};
+use super::{ansi, clipboard::Clipboard, component::{select_component_unfiltered, select_components_unfiltered}, condition::make_condition, config::Config, from_str::{InBounds, MenuRes}, io::{get_from_input, get_from_input_valid, get_str, wait_for_input}, location::get_location, object::{get_object}, recipe::{select_recipe_unfiltered, select_recipes_unfiltered}, resources::get_rss, system::get_system};
 
 pub fn make_queue(sys: &mut Systems, obj: ObjectID, cmp: &Components, rss: &ResourceDict, instrs: &mut Instrs, cfg: &mut Config) {
     let is_kept: bool = get_from_input(
@@ -189,16 +190,20 @@ pub fn instrs_menu(sys: &mut Systems, obj: ObjectID, cmp: &Components, rss: &Res
 pub fn queue_menu(sys: &mut Systems, obj: ObjectID, cmp: &Components, rss: &ResourceDict, queue: &mut Queue, name: String, cfg: &mut Config) {
     loop {
         println!("Viewing queue {}:", name);
-        println!("0. Exit");
-        println!("1. Make a new instruction. ");
-        println!("2. Remove an instruction. ");
-        let len = 3;
-        println!("{}", queue.display(len, obj, sys, rss, cmp)); //Displays stuff
-        let input: usize = get_from_input_valid("", "Please enter a valid input.", cfg, |x| *x < (len + queue.len())); //Gets input
+        let mut ctx = cfg.generate_context();
+        let mut dis = cfg.generate_display();
+        cfg.update_context(Config::QUIT, Some("exit to object menu".to_string()), &mut ctx, &mut dis);
+        cfg.update_context(Config::NEW, Some("create a queue".to_string()), &mut ctx, &mut dis);
+        cfg.update_context(Config::DELETE, Some("delete a queue".to_string()), &mut ctx, &mut dis);
+        cfg.update_context(Config::TICK, None, &mut ctx, &mut dis);
+        cfg.update_context(Config::INFO, None, &mut ctx, &mut dis);
+        println!("{}", cfg.display(&ctx, &dis));
+        println!("{}", queue.display(obj, sys, rss, cmp)); //Displays stuff
+        let input: MenuRes = get_from_input_valid("", "Please enter a valid input.", cfg, |x:&MenuRes| x.in_bounds(&queue.len())); //Gets input
         match input {
-            0 => break, //Exits out
-            1 => {
-                println!("{}", queue.display(0, obj, sys, rss, cmp)); //Displays stuff
+            MenuRes::Exit => break, //Exits out
+            MenuRes::New => {
+                println!("{}", queue.display(obj, sys, rss, cmp)); //Displays stuff
                 println!("{}. Add on end", queue.len());
                 let pos: usize = get_from_input_valid("Where do you want to put the instruction?", "Please enter a valid location!", cfg, |x| {
                     *x <= queue.len()
@@ -212,8 +217,8 @@ pub fn queue_menu(sys: &mut Systems, obj: ObjectID, cmp: &Components, rss: &Reso
                 }
                 wait_for_input("Press enter to continue: ", cfg);
             } //Makes a new instruction from input
-            2 => {
-                println!("{}", queue.display(0, obj, sys, rss, cmp)); //Displays stuff
+            MenuRes::Del => {
+                println!("{}", queue.display(obj, sys, rss, cmp)); //Displays stuff
                 println!("{}{}. Abort", ansi::RED, queue.len());
                 let pos: usize = get_from_input_valid(
                     "Which instruction do you want to delete?",
@@ -221,7 +226,7 @@ pub fn queue_menu(sys: &mut Systems, obj: ObjectID, cmp: &Components, rss: &Reso
                     cfg,
                     |x| *x <= queue.len(),
                 );
-                if pos < len {
+                if pos < queue.len() {
                     //If a valid number was inputted...
                     queue.rmv(pos); //Removes the queue
                     println!("Instruction removal successful!");
@@ -231,9 +236,31 @@ pub fn queue_menu(sys: &mut Systems, obj: ObjectID, cmp: &Components, rss: &Reso
                 }
                 wait_for_input("Press enter to continue: ", cfg);
             } //Removes an instruction based on input
-            _ => {
+            MenuRes::Enter(val) => {
                 let temp = queue.len();
-                instr_menu(rss, cmp, sys, obj, queue.get(input - len), temp, cfg)
+                instr_menu(rss, cmp, sys, obj, queue.get(val), temp, cfg)
+            }
+            MenuRes::Copy => {
+                cfg.cpb = Clipboard::Queue(queue.clone())
+            }
+            MenuRes::Paste => {
+                match cfg.cpb{
+                    Clipboard::SystemID(_) => {}
+                    Clipboard::Template(_) => {}
+                    Clipboard::Object(_) => {}
+                    Clipboard::Instrs(_) => {}
+                    Clipboard::Queue(_) => {}
+                    Clipboard::Quickie(_) => {}
+                    Clipboard::Instr(_, _) => {}
+                    Clipboard::Resources(_) => {}
+                    Clipboard::Recipe(_) => {}
+                    Clipboard::Resource(_) => {}
+                    Clipboard::Component(_) => {}
+                    Clipboard::None => {}
+                }
+            }
+            _ => {
+                wait_for_input(&format!("{}Please enter a valid input.", ansi::RED), cfg)
             }
         }
     }

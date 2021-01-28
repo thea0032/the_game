@@ -8,11 +8,16 @@ use super::{ansi, clipboard::Clipboard, config::Config, from_str::{InBounds, Men
 
 pub fn select_recipes(cmp: &Components, obj: &Object, cfg: &mut Config) -> Option<(RecipeID, usize)> {
     let amts: Vec<usize> = cmp.recipe_list.iter().map(|x| obj.resources().amt_contained(x.cost_stat())).collect(); //Maximum amount of each recipe
+    let mut ctx = cfg.generate_context();
+    let mut dis = cfg.generate_display();
+    cfg.update_context_all(&mut dis);
+    cfg.update_context(Config::PASTE, Some("paste".to_string()), &mut ctx, &mut dis);
+    cfg.update_context(Config::QUIT, Some("abort".to_string()), &mut ctx, &mut dis);
+    println!("{}", cfg.display(&ctx, &dis));
     println!("{}", cmp.display_contained_r(&amts)); //Displays stuff
     let filter: Vec<bool> = amts.iter().map(|x| x != &0).collect(); //Whether it's actually an option
     let len = filter.iter().filter(|x| **x).count(); //Amount of options
-    println!("{}{}. Quit{}", ansi::RED, cfg.quit().id(), ansi::RESET); //Quit option
-    let input: MenuRes = get_from_input_valid("Enter the recipe you want: ", "Please enter a valid id", cfg, |x:&MenuRes| x.in_bounds(&cmp.len_r())); //Gets input
+    let input: MenuRes = get_from_input_valid("Enter the recipe you want: ", "Please enter a valid id", cfg, |x:&MenuRes| x.in_bounds(&len)); //Gets input
     let id:Option<RecipeID> = match input{
         MenuRes::Enter(val) => {Some(RecipeID::new(crate::extra_bits::filter(val, &filter)))}
         MenuRes::Exit => {None}

@@ -1,4 +1,3 @@
-use ansi::{GREEN, YELLOW};
 use info::information;
 use location::get_location;
 use quickie::quickie;
@@ -48,7 +47,7 @@ pub fn object_menu(rss: &ResourceDict, cmp: &mut Components, sys: &mut Systems, 
         cfg.update_context(Config::QUIT, Some("exit to system menu".to_string()), &mut ctx, &mut dis);
         cfg.update_context(Config::NEW, Some("install a component".to_string()), &mut ctx, &mut dis);
         cfg.update_context(Config::DELETE, Some("remove a component".to_string()), &mut ctx, &mut dis);
-        println!("{}", cfg.display(ctx, dis));
+        println!("{}", cfg.display(&ctx, &dis));
         println!("0. Use a recipe ");
         println!("1. Transfer resources to another object: ");
         println!("{}", ansi::BLUE);
@@ -165,6 +164,12 @@ pub fn transfer(rss: &ResourceDict, sys: &mut Systems, obj: ObjectID, cfg: &mut 
 }
 pub fn get_object(sys: &Systems, system: SystemID, cfg: &mut Config) -> Option<ObjectID> {
     loop{
+        let mut ctx = cfg.generate_context();
+        let mut dis = cfg.generate_display();
+        cfg.update_context_all(&mut dis);
+        cfg.update_context(Config::PASTE, Some("paste".to_string()), &mut ctx, &mut dis);
+        cfg.update_context(Config::QUIT, Some("abort".to_string()), &mut ctx, &mut dis);
+        println!("{}", cfg.display(&ctx, &dis));
         println!("{}", sys.get_s_stat(system).display(sys.get_o_names(), sys)); //Displays all objects in system
         let input: MenuRes = get_from_input_valid("Enter the object: ", "Please enter a valid number", cfg, |x:&MenuRes| {
             x.in_bounds(&sys.get_s_stat(system).get_objs().len())

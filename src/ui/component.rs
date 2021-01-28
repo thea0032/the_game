@@ -1,7 +1,7 @@
 use crate::ui::io::*;
 use crate::{component::*, object::*, resources::*};
 
-use super::{ansi, config::Config};
+use super::{ansi, clipboard, config::Config, from_str::{InBounds, MenuRes}};
 
 pub fn select_components_unfiltered(cmp: &Components, cfg: &mut Config) -> Option<(ComponentID, usize)> {
     println!("{}", cmp.display()); //Displays all possible components
@@ -29,20 +29,48 @@ pub fn select_component_unfiltered(cmp: &Components, cfg: &mut Config) -> Option
 pub fn select_components_filtered(cmp: &mut Components, v: &Vec<usize>, cfg: &mut Config) -> Option<(ComponentID, usize)> {
     let is_included: Vec<bool> = v.iter().map(|x| x != &0).collect(); //Maps whether each option is displayed
     let len = is_included.iter().filter(|x| **x).count(); //The amount of options displayed
-    println!("{}", cmp.display_contained(&v)); //Displays the options
-    println!("{}{}. Quit{}", ansi::RED, len, ansi::RESET); //Quit option
-    let input: usize = get_from_input_valid("Enter the component you want: ", "Please enter a valid id", cfg, |x| x <= &len); //Gets input
-    if input == len {
-        return None;
-    } //Quit option
-    let id = crate::extra_bits::filter(input, &is_included); //Maps option selected to component selected
+    let mut ctx = cfg.generate_context();
+    let mut dis = cfg.generate_display();
+    cfg.update_context_all(&mut dis);
+    cfg.update_context(Config::PASTE, Some("paste".to_string()), &mut ctx, &mut dis);
+    cfg.update_context(Config::QUIT, Some("abort".to_string()), &mut ctx, &mut dis);
+    let id;
+    loop{
+        println!("{}", cfg.display(&ctx, &dis));
+        println!("{}", cmp.display_contained(&v)); //Displays the options
+        let input: MenuRes = get_from_input_valid("Enter the component you want: ", "Please enter a valid id", cfg, |x:&MenuRes| x.in_bounds(&len)); //Gets input
+        match input {
+            MenuRes::Enter(val) => {
+                id = val;
+                break;
+            }
+            MenuRes::Exit | MenuRes::Del => {
+                return None;
+            }
+            MenuRes::Paste => {
+                match cfg.cpb{
+                    clipboard::Clipboard::Component(val) => {
+                        if is_included[val.id()]{
+                            id = val.id();
+                            break;
+                        }
+                    }
+                    _ => {},
+                }
+                wait_for_input(&format!("{}You cannot paste that there!", ansi::RED), cfg);
+            }
+            _ => {
+                wait_for_input(&format!("{}Please enter a valid id", ansi::RED), cfg);
+            }
+        }
+    };
     let amt = get_from_input_valid(
         "Enter the amount of components you want to remove",
         "Please enter a valid number",
         cfg,
         |x| *x <= v[id],
     ); //Gets an amount
-    Some((ComponentID::new(input), amt)) //Returns a value
+    Some((ComponentID::new(id), amt)) //Returns a value
 }
 pub fn details(rss: &ResourceDict, cmp: &mut Components, cfg: &mut Config) {
     println!("{}", cmp.display_detailed(rss)); //Displays helpful stuff
@@ -53,11 +81,7 @@ pub fn add_component(cmp: &mut Components, obj: &mut Object, cfg: &mut Config) {
     let component = select_components_filtered(cmp, &amts, cfg); //Gets a component that you can afford
     if let Some(component) = component {
         let amt_success = obj.install_components(component.0, cmp, component.1); //Attempts to install components.
-        println!("{} components successfully installed!", amt_success); //Tells
-                                                                        // you how
-                                                                        // many successes
-                                                                        // there
-                                                                        // are
+        println!("{} components successfully installed!", amt_success); //Tells you how many successes there are
     } else {
         println!("Component installation aborted!");
     }

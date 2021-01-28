@@ -1,17 +1,44 @@
 use crate::resources::*;
 use crate::{extra_bits, ui::io::*};
 
-use super::{ansi, config::Config};
+use super::{ansi, config::Config, from_str::{InBounds, MenuRes}};
 pub fn get_resource_filtered(rss: &ResourceDict, amts: &Vec<u128>, cfg: &mut Config) -> Option<ResourceID> {
     let filter: Vec<bool> = amts.iter().map(|x| x != &0).collect(); //If the option exists
     let len = filter.iter().filter(|x| **x).count(); //Amount of options
-    println!("{}", rss.display_filtered_addon(&filter, amts));
-    println!("{}{}. Quit{}", ansi::RED, len, ansi::RESET);
-    let input: usize = get_from_input_valid("Enter the resource you want: ", "Please enter a valid id", cfg, |x| x <= &len); //gets input
-    if input == len {
-        return None; //quit option
+    loop{
+        let mut ctx = cfg.generate_context();
+        let mut dis = cfg.generate_display();
+        cfg.update_context_all(&mut dis);
+        cfg.update_context(Config::PASTE, Some("paste".to_string()), &mut ctx, &mut dis);
+        cfg.update_context(Config::QUIT, Some("abort".to_string()), &mut ctx, &mut dis);
+        println!("{}", cfg.display(&ctx, &dis));
+        println!("{}", rss.display_filtered_addon(&filter, amts));
+        let input: MenuRes = get_from_input_valid("Enter the resource you want: ", "Please enter a valid id", cfg, |x:&MenuRes| x.in_bounds(&len)); //gets input
+        match input{
+            MenuRes::Enter(val) => {
+                return Some(ResourceID::new(extra_bits::filter(val, &filter)));
+            },
+            MenuRes::Exit | MenuRes::Del => {
+                return None;
+            },
+            MenuRes::Paste => {
+                match cfg.cpb{
+                    super::clipboard::Clipboard::Resource(val) => {
+                        if filter[val.get()]{
+                            return Some(val);
+                        } else {
+                            wait_for_input(&format!("{}You can't paste that there!", ansi::RED), cfg);
+                        }
+                    }
+                    _ => wait_for_input(&format!("{}You can't paste that there!", ansi::RED), cfg)
+                }
+            }
+            _ => {
+                wait_for_input(&format!("{}Please enter a valid id", ansi::RED), cfg)
+            }
+        }
+         //Returns the resource
     }
-    Some(ResourceID::new(extra_bits::filter(input, &filter))) //Returns the resource
 }
 pub fn get_transfer_max(rss: &ResourceDict, cap: u128) -> Vec<u128> {
     let costs = rss.get_transfer_costs();

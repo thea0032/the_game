@@ -13,7 +13,7 @@ pub fn system_menu(rss: &ResourceDict, cmp: &mut Components, sys: &mut Systems, 
         cfg.update_context(Config::QUIT, Some("exit to systems menu".to_string()), &mut ctx, &mut dis);
         cfg.update_context(Config::DELETE, None, &mut ctx, &mut dis);
         cfg.update_context(Config::NEW, Some("new object".to_string()), &mut ctx, &mut dis);
-        println!("{}", cfg.display(ctx, dis));
+        println!("{}", cfg.display(&ctx, &dis));
         println!("{}", sys.get_s_stat(system).display(sys.get_o_names(), sys));
         print!("{}", ansi::RESET); //Print statements are self-explanatory
         let response: MenuRes = get_from_input_valid("", "Please enter a valid input.", cfg, |x: &MenuRes| {
@@ -33,6 +33,8 @@ pub fn system_menu(rss: &ResourceDict, cmp: &mut Components, sys: &mut Systems, 
             }
             MenuRes::Paste => if let Clipboard::Template(val) = &cfg.cpb.clone() {
                 paste_object(rss, cmp, sys, system, dir, cfg, val);
+            } else if let Clipboard::Object(val) = &cfg.cpb{
+                object_menu(rss, cmp, sys, *val, dir, cfg);
             } else {
                 wait_for_input(&format!("{}You cannot paste that here!", ansi::RED), cfg);
             },
