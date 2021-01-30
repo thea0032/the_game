@@ -1,4 +1,3 @@
-
 use crate::{
     component::Components,
     extra_bits,
@@ -7,7 +6,21 @@ use crate::{
     systems::{object_id::ObjectID, Systems},
 };
 
-use super::{ansi, clipboard::Clipboard, component::{select_component_unfiltered, select_components_unfiltered}, condition::make_condition, config::Config, from_str::{InBounds, MenuRes}, io::{get_from_input, get_from_input_valid, get_str, wait_for_input}, location::get_location, object::{get_object}, recipe::{select_recipe_unfiltered, select_recipes_unfiltered}, resources::get_rss, system::get_system};
+use super::{
+    ansi,
+    clipboard::Clipboard,
+    component::{select_component_unfiltered, select_components_unfiltered},
+    condition::make_condition,
+    config::Config,
+    from_str::{InBounds, MenuRes},
+    io::{get_from_input, get_from_input_valid, get_str, wait_for_input},
+    location::get_location,
+    object::get_object,
+    recipe::{select_recipe_unfiltered, select_recipes_unfiltered},
+    resources::get_rss,
+    select::{generic_select, generic_select_simple},
+    system::get_system,
+};
 
 pub fn make_queue(sys: &mut Systems, obj: ObjectID, cmp: &Components, rss: &ResourceDict, instrs: &mut Instrs, cfg: &mut Config) {
     let is_kept: bool = get_from_input(
@@ -77,14 +90,18 @@ pub fn make_move(cfg: &mut Config) -> Instr {
     Instr::Move(get_location(cfg)) //Gets a location
 } //Makes a move instruction from input
 pub fn make_jump(sys: &Systems, cfg: &mut Config) -> Instr {
-    Instr::Jump(if let Some(val) = get_system(sys, cfg){val} else {return Instr::Fail}) //Gets a system
+    Instr::Jump(if let Some(val) = get_system(sys, cfg) { val } else { return Instr::Fail }) //Gets a system
 } //Makes a jump instruction from input
 pub fn make_transfer(rss: &ResourceDict, sys: &Systems, cfg: &mut Config) -> Instr {
     let mut input: Vec<u128> = extra_bits::fill(rss.len(), 0);
     get_rss(rss, &mut input, cfg);
-    let system = if let Some(system) = get_system(sys, cfg){system} else {return Instr::Fail};
+    let system = if let Some(system) = get_system(sys, cfg) {
+        system
+    } else {
+        return Instr::Fail;
+    };
     let o = get_object(sys, system, cfg);
-    if let Some(val) = o{
+    if let Some(val) = o {
         Instr::Transfer(input, val)
     } else {
         Instr::Fail
@@ -93,18 +110,26 @@ pub fn make_transfer(rss: &ResourceDict, sys: &Systems, cfg: &mut Config) -> Ins
 pub fn make_grab(rss: &ResourceDict, sys: &Systems, cfg: &mut Config) -> Instr {
     let mut input: Vec<u128> = extra_bits::fill(rss.len(), 0);
     get_rss(rss, &mut input, cfg);
-    let system = if let Some(system) = get_system(sys, cfg){system} else {return Instr::Fail};
+    let system = if let Some(system) = get_system(sys, cfg) {
+        system
+    } else {
+        return Instr::Fail;
+    };
     let o = get_object(sys, system, cfg);
-    if let Some(val) = o{
+    if let Some(val) = o {
         Instr::Grab(input, val)
     } else {
         Instr::Fail
     }
 } //Makes a grab instruction from input
 pub fn make_moveto(sys: &Systems, cfg: &mut Config) -> Instr {
-    let system = if let Some(system) = get_system(sys, cfg){system} else {return Instr::Fail};
+    let system = if let Some(system) = get_system(sys, cfg) {
+        system
+    } else {
+        return Instr::Fail;
+    };
     let o = get_object(sys, system, cfg);
-    if let Some(val) = o{
+    if let Some(val) = o {
         Instr::MoveTo(val)
     } else {
         Instr::Fail
@@ -153,118 +178,7 @@ pub fn make_end() -> Instr {
 pub fn make_fail() -> Instr {
     Instr::Fail
 } //Makes a fail instruction
-pub fn instrs_menu(sys: &mut Systems, obj: ObjectID, cmp: &Components, rss: &ResourceDict, instrs: &mut Instrs, cfg: &mut Config) {
-    loop {
-        println!("Viewing current instructions for {}:", sys.get_o_name(obj));
-        print!("{}", ansi::GREEN);
-        println!("0. Exit");
-        println!("1. Make a new queue");
-        println!("2. Delete a queue");
-        let len = 3;
-        println!("{}", instrs.display(len)); //Prints stuff
-        print!("{}", ansi::RESET);
-        let input: usize = get_from_input_valid("", "Please enter a valid input.", cfg, |x| *x < (len + instrs.len())); //Gets input
-        match input {
-            0 => break,                                       //Exit out
-            1 => make_queue(sys, obj, cmp, rss, instrs, cfg), //Make new queue
-            2 => {
-                println!("{}", instrs.display(0));
-                println!("{}. abort", instrs.len());
-                let pos: usize = get_from_input_valid("Which queue do you want to remove?", "Please enter a valid input", cfg, |x| {
-                    *x <= instrs.len()
-                });
-                if pos < instrs.len() {
-                    instrs.rmv(pos);
-                    println!("Queue successfully removed!");
-                } else {
-                    println!("Queue removal aborted!");
-                }
-            } //Remove queue
-            _ => {
-                let name = instrs.get_name(input - len);
-                queue_menu(sys, obj, cmp, rss, instrs.get_queue(input - len), name, cfg)
-            } //Enter another queue
-        }
-    }
-} //A menu
-pub fn queue_menu(sys: &mut Systems, obj: ObjectID, cmp: &Components, rss: &ResourceDict, queue: &mut Queue, name: String, cfg: &mut Config) {
-    loop {
-        println!("Viewing queue {}:", name);
-        let mut ctx = cfg.generate_context();
-        let mut dis = cfg.generate_display();
-        cfg.update_context(Config::QUIT, Some("exit to object menu".to_string()), &mut ctx, &mut dis);
-        cfg.update_context(Config::NEW, Some("create a queue".to_string()), &mut ctx, &mut dis);
-        cfg.update_context(Config::DELETE, Some("delete a queue".to_string()), &mut ctx, &mut dis);
-        cfg.update_context(Config::TICK, None, &mut ctx, &mut dis);
-        cfg.update_context(Config::INFO, None, &mut ctx, &mut dis);
-        println!("{}", cfg.display(&ctx, &dis));
-        println!("{}", queue.display(obj, sys, rss, cmp)); //Displays stuff
-        let input: MenuRes = get_from_input_valid("", "Please enter a valid input.", cfg, |x:&MenuRes| x.in_bounds(&queue.len())); //Gets input
-        match input {
-            MenuRes::Exit => break, //Exits out
-            MenuRes::New => {
-                println!("{}", queue.display(obj, sys, rss, cmp)); //Displays stuff
-                println!("{}. Add on end", queue.len());
-                let pos: usize = get_from_input_valid("Where do you want to put the instruction?", "Please enter a valid location!", cfg, |x| {
-                    *x <= queue.len()
-                }); //Gets pos
-                if let Some(val) = make_instr(rss, cmp, sys, obj, queue.len() + 1, cfg) {
-                    //Gets instr
-                    queue.ins(val, pos); //Inserts if it wasn't aborted
-                    println!("Instruction insertion successful!");
-                } else {
-                    println!("{}Instruction insertion aborted!", ansi::RED);
-                }
-                wait_for_input("Press enter to continue: ", cfg);
-            } //Makes a new instruction from input
-            MenuRes::Del => {
-                println!("{}", queue.display(obj, sys, rss, cmp)); //Displays stuff
-                println!("{}{}. Abort", ansi::RED, queue.len());
-                let pos: usize = get_from_input_valid(
-                    "Which instruction do you want to delete?",
-                    "Please enter a valid number (or the queue's length)",
-                    cfg,
-                    |x| *x <= queue.len(),
-                );
-                if pos < queue.len() {
-                    //If a valid number was inputted...
-                    queue.rmv(pos); //Removes the queue
-                    println!("Instruction removal successful!");
-                } else {
-                    println!("{}Instruction removal aborted!", ansi::RED);
-                    //Otherwise, does nothing.
-                }
-                wait_for_input("Press enter to continue: ", cfg);
-            } //Removes an instruction based on input
-            MenuRes::Enter(val) => {
-                let temp = queue.len();
-                instr_menu(rss, cmp, sys, obj, queue.get(val), temp, cfg)
-            }
-            MenuRes::Copy => {
-                cfg.cpb = Clipboard::Queue(queue.clone())
-            }
-            MenuRes::Paste => {
-                match cfg.cpb{
-                    Clipboard::SystemID(_) => {}
-                    Clipboard::Template(_) => {}
-                    Clipboard::Object(_) => {}
-                    Clipboard::Instrs(_) => {}
-                    Clipboard::Queue(_) => {}
-                    Clipboard::Quickie(_) => {}
-                    Clipboard::Instr(_, _) => {}
-                    Clipboard::Resources(_) => {}
-                    Clipboard::Recipe(_) => {}
-                    Clipboard::Resource(_) => {}
-                    Clipboard::Component(_) => {}
-                    Clipboard::None => {}
-                }
-            }
-            _ => {
-                wait_for_input(&format!("{}Please enter a valid input.", ansi::RED), cfg)
-            }
-        }
-    }
-}
+
 pub fn instr_menu(rss: &ResourceDict, cmp: &Components, sys: &mut Systems, obj: ObjectID, instr: &mut Instr, queue_len: usize, cfg: &mut Config) {
     loop {
         println!("Viewing {}", instr.display(obj, sys, rss, cmp));
@@ -391,7 +305,7 @@ pub fn parse_options(
             *val = get_location(cfg); //Updates location
         }
         Instr::Jump(val) => {
-            if let Some(s) = get_system(sys, cfg){
+            if let Some(s) = get_system(sys, cfg) {
                 *val = s; //Updates system
             }
         }
@@ -401,8 +315,8 @@ pub fn parse_options(
                     get_rss(rss, val, cfg) //Updates resources to be transferred
                 }
                 1 => {
-                    if let Some(val) = get_system(sys, cfg){
-                        if let Some(val) = get_object(sys, val, cfg){
+                    if let Some(val) = get_system(sys, cfg) {
+                        if let Some(val) = get_object(sys, val, cfg) {
                             *val2 = val; //Updates object
                         }
                     }
@@ -416,8 +330,8 @@ pub fn parse_options(
                     get_rss(rss, val, cfg) //Updates resources to be transferred
                 }
                 1 => {
-                    if let Some(val) = get_system(sys, cfg){
-                        if let Some(val) = get_object(sys, val, cfg){
+                    if let Some(val) = get_system(sys, cfg) {
+                        if let Some(val) = get_object(sys, val, cfg) {
                             *val2 = val; //Updates object
                         }
                     }
@@ -426,8 +340,8 @@ pub fn parse_options(
             }
         }
         Instr::MoveTo(val) => {
-            if let Some(system) = get_system(sys, cfg){
-                if let Some(obj) = get_object(sys, system, cfg){
+            if let Some(system) = get_system(sys, cfg) {
+                if let Some(obj) = get_object(sys, system, cfg) {
                     *val = obj; //Updates object
                 }
             }
@@ -472,4 +386,7 @@ pub fn parse_options(
         Instr::End => {}    //No extra options
         Instr::Fail => {}   //No extra options
     }
+}
+pub fn select_queue(instrs: &mut Instrs, cfg: &mut Config) -> Option<usize> {
+    generic_select_simple(&instrs.display(), instrs.len(), |x| Some(x), cfg)
 }

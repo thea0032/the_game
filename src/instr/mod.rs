@@ -372,12 +372,7 @@ impl Queue {
     pub fn display(&self, obj: ObjectID, sys: &mut Systems, rss: &ResourceDict, cmp: &Components) -> String {
         let mut res = "".to_string(); //Initializes result
         for i in 0..self.queue.len() {
-            res.push_str(&format!(
-                "{}{}: {}",
-                self.color_instr(i),
-                i,
-                self.queue[i].display(obj, sys, rss, cmp)
-            ));
+            res.push_str(&format!("{}{}: {}", self.color_instr(i), i, self.queue[i].display(obj, sys, rss, cmp)));
             if let InstrRes::Fail(val) = &self.last_res {
                 res.push_str(&format!("(FAILED: {})\n", val));
             } else {
@@ -459,22 +454,27 @@ impl Instrs {
     pub fn get_queue(&mut self, id: usize) -> &mut Queue {
         &mut self.instrs[id]
     } //Gets the queue based on the position
-    pub fn get_queues(& self) -> &Vec<Queue> {
-        & self.instrs
+    pub fn get_queues(&self) -> &Vec<Queue> {
+        &self.instrs
     } //Gets the queue based on the position
     pub fn len(&self) -> usize {
         self.instrs.len()
     } //Gets the length.
-    pub fn display(&self, amt_before: usize) -> String {
+    pub fn display(&self) -> String {
         let mut res = "".to_string();
         for i in 0..self.instrs.len() {
-            res.push_str(&format!("{}{}: {}\n", self.instrs[i].color(), i + amt_before, self.names[i]));
+            res.push_str(&format!("{}{}: {}\n", self.instrs[i].color(), i, self.names[i]));
         }
         res
     } //Displays the object.
     pub fn get_name(&self, id: usize) -> String {
         self.names[id].clone()
     } //Gets the name.
+    pub fn merge(&mut self, other: &Instrs) {
+        for i in 0..other.len() {
+            self.add(other.instrs[i].clone(), other.names[i].clone());
+        }
+    } //Merges the other instructions into this one
 }
 #[derive(Clone)]
 pub struct Quickie {
@@ -491,13 +491,13 @@ impl Quickie {
             del: Vec::new(),
         }
     } //Initializes the structure
-    pub fn get_dirs(&self) -> &Vec<Instr>{
+    pub fn get_dirs(&self) -> &Vec<Instr> {
         return &self.dirs;
     }
-    pub fn get_res(&self) -> &Vec<InstrRes>{
+    pub fn get_res(&self) -> &Vec<InstrRes> {
         return &self.res;
     }
-    pub fn get_del(&self) -> &Vec<bool>{
+    pub fn get_del(&self) -> &Vec<bool> {
         return &self.del;
     }
     pub fn exe(&mut self, obj: ObjectID, sys: &mut Systems, rss: &ResourceDict, cmp: &Components) {

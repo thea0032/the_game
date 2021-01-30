@@ -5,7 +5,12 @@ use crate::{
     systems::{object_id::ObjectID, Systems},
 };
 
-use super::{ansi, config::Config, instr, io::{get_from_input_valid, wait_for_input,}};
+use super::{
+    ansi,
+    config::Config,
+    instr,
+    io::{get_from_input_valid, wait_for_input},
+};
 
 pub fn quickie(rss: &ResourceDict, cmp: &Components, sys: &mut Systems, dir: &mut Quickie, obj: ObjectID, cfg: &mut Config) {
     loop {
@@ -17,7 +22,7 @@ pub fn quickie(rss: &ResourceDict, cmp: &Components, sys: &mut Systems, dir: &mu
         let len = 4;
         println!("{}", dir.display(len, obj, sys, rss, cmp)); //Displays options
         let input: usize = get_from_input_valid("", "Please enter a valid input", cfg, |x| *x < len + dir.len()); //Gets option
-        
+
         match input {
             0 => break, //Breaks out of menu
             1 => {

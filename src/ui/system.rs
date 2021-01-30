@@ -1,7 +1,13 @@
 use info::information;
 use object_id::ObjectID;
 
-use crate::{component::*, object::template::Template, resources::*, systems::*, ui::{object::*, *}};
+use crate::{
+    component::*,
+    object::template::Template,
+    resources::*,
+    systems::*,
+    ui::{object::*, *},
+};
 use crate::{instr::Directions, systems::system_id::SystemID, ui::io::*};
 
 use super::object::get_object;
@@ -10,10 +16,7 @@ pub fn system_menu(rss: &ResourceDict, cmp: &mut Components, sys: &mut Systems, 
         println!("Viewing {}", sys.get_s_name(system));
         let mut ctx = cfg.generate_context();
         let mut dis = cfg.generate_display();
-        cfg.update_context(Config::QUIT, Some("exit to systems menu".to_string()), &mut ctx, &mut dis);
-        cfg.update_context(Config::DELETE, None, &mut ctx, &mut dis);
-        cfg.update_context(Config::NEW, Some("new object".to_string()), &mut ctx, &mut dis);
-        println!("{}", cfg.display(&ctx, &dis));
+        println!("{}", cfg.display(context::SYSTEM_MENU));
         println!("{}", sys.get_s_stat(system).display(sys.get_o_names(), sys));
         print!("{}", ansi::RESET); //Print statements are self-explanatory
         let response: MenuRes = get_from_input_valid("", "Please enter a valid input.", cfg, |x: &MenuRes| {
@@ -22,7 +25,9 @@ pub fn system_menu(rss: &ResourceDict, cmp: &mut Components, sys: &mut Systems, 
         match response {
             MenuRes::Tick => sys.tick(rss, cmp, dir), //If it's zero, we tick
             MenuRes::Exit => break,                   //If it's 1, goes back to the system menu
-            MenuRes::New => {make_object(rss, cmp, sys, dir, system, cfg);},
+            MenuRes::New => {
+                make_object(rss, cmp, sys, dir, system, cfg);
+            }
             MenuRes::Enter(val) => {
                 let actual_id = sys.get_s(system).get_objs()[val];
                 object_menu(rss, cmp, sys, actual_id, dir, cfg)
@@ -31,32 +36,46 @@ pub fn system_menu(rss: &ResourceDict, cmp: &mut Components, sys: &mut Systems, 
                 cfg.cpb = Clipboard::SystemID(system);
                 wait_for_input(&format!("Copied system {} to the clipboard!", sys.get_s_name(system)), cfg);
             }
-            MenuRes::Paste => if let Clipboard::Template(val) = &cfg.cpb.clone() {
-                paste_object(rss, cmp, sys, system, dir, cfg, val);
-            } else if let Clipboard::Object(val) = &cfg.cpb{
-                object_menu(rss, cmp, sys, *val, dir, cfg);
-            } else {
-                wait_for_input(&format!("{}You cannot paste that here!", ansi::RED), cfg);
-            },
-            MenuRes::Del => {
-
-            },
-            MenuRes::Info => information(rss, cmp, cfg)
+            MenuRes::Paste => {
+                if let Clipboard::Template(val) = &cfg.cpb.clone() {
+                    paste_object(rss, cmp, sys, system, dir, cfg, val);
+                } else if let Clipboard::Object(val) = &cfg.cpb {
+                    object_menu(rss, cmp, sys, *val, dir, cfg);
+                } else {
+                    wait_for_input(&format!("{}You cannot paste that here!", ansi::RED), cfg);
+                }
+            }
+            MenuRes::Del => {}
+            MenuRes::Info => information(rss, cmp, cfg),
         };
     }
 }
-pub fn paste_object(rss: &ResourceDict, cmp: &mut Components, sys: &mut Systems, system:SystemID, dir: &mut Directions, cfg: &mut Config, t:&Template) {
+pub fn system_menu_context(ctx: &mut Vec<String>, dis: &mut Vec<bool>, cfg: &Config) {
+    cfg.update_context(Config::QUIT, Some("exit to systems menu".to_string()), ctx, dis);
+    cfg.update_context(Config::DELETE, None, ctx, dis);
+    cfg.update_context(Config::NEW, Some("new object".to_string()), ctx, dis);
+}
+pub fn paste_object(
+    rss: &ResourceDict, cmp: &mut Components, sys: &mut Systems, system: SystemID, dir: &mut Directions, cfg: &mut Config, t: &Template,
+) {
     println!("Enter the source object:");
     let o = get_object(sys, system, cfg);
-    if let Some(source) = o{
+    if let Some(source) = o {
         println!("Creating the destination object...");
-        let val = sys.add_o(rss, cmp, dir, get_str("What do you want to call your object?", cfg), *sys.get_o_stat(source).get_location_stat(), system);
+        let val = sys.add_o(
+            rss,
+            cmp,
+            dir,
+            get_str("What do you want to call your object?", cfg),
+            *sys.get_o_stat(source).get_location_stat(),
+            system,
+        );
         println!("Creation done!");
-        if t.install(val, sys){
+        if t.install(val, sys) {
             println!("Template installed!");
         } else {
             println!("Trying to install from other origin...");
-            if t.grab(source, val, sys){
+            if t.grab(source, val, sys) {
                 println!("Successfully installed template!");
             } else {
                 println!("Failed to install template!");
@@ -65,31 +84,27 @@ pub fn paste_object(rss: &ResourceDict, cmp: &mut Components, sys: &mut Systems,
     }
 }
 pub fn select_object_filtered(sys: &Systems, id: SystemID, filter: Vec<bool>, cfg: &mut Config) -> Option<ObjectID> {
-    loop{
+    loop {
         println!("{}", sys.get_s_stat(id).display_filtered(0, &filter, sys.get_o_names()));
         let len = filter.iter().filter(|x| **x).count();
-        let input: MenuRes = get_from_input_valid("Enter the object you want: ", "Please enter a valid id", cfg, |x:&MenuRes| x.in_bounds(&len));
-        match input{
-            MenuRes::Enter(v) => {
-                return Some(sys.get_s_stat(id).get_objs()[crate::extra_bits::filter(v, &filter)])
-            }
-            MenuRes::Exit | MenuRes::Del => {
-                return None
-            }
-            MenuRes::Paste => {
-                match &cfg.cpb {
-                    Clipboard::Object(val) => {
-                        if filter[val.get()]{
-                            return Some(*val);
-                        } else {
-                            wait_for_input(&format!("{}You can't paste that there!", ansi::RED), cfg);
-                        }
-                    }
-                    _ => {
+        let input: MenuRes = get_from_input_valid("Enter the object you want: ", "Please enter a valid id", cfg, |x: &MenuRes| {
+            x.in_bounds(&len)
+        });
+        match input {
+            MenuRes::Enter(v) => return Some(sys.get_s_stat(id).get_objs()[crate::extra_bits::filter(v, &filter)]),
+            MenuRes::Exit | MenuRes::Del => return None,
+            MenuRes::Paste => match &cfg.cpb {
+                Clipboard::Object(val) => {
+                    if filter[val.get()] {
+                        return Some(*val);
+                    } else {
                         wait_for_input(&format!("{}You can't paste that there!", ansi::RED), cfg);
                     }
                 }
-            }
+                _ => {
+                    wait_for_input(&format!("{}You can't paste that there!", ansi::RED), cfg);
+                }
+            },
             _ => {
                 wait_for_input(&format!("{}Please enter a valid entry", ansi::RED), cfg);
             }
@@ -107,26 +122,22 @@ pub fn select_object_docked(sys: &Systems, id: ObjectID, cfg: &mut Config) -> Op
     select_object_filtered(sys, curr_system_id, filter, cfg)
 }
 pub fn get_system(sys: &Systems, cfg: &mut Config) -> Option<SystemID> {
-    loop{
+    loop {
         println!("{}", sys.display());
-        let input:MenuRes = get_from_input_valid(
-            "Enter the system you want",
-            "Please enter a valid entry",
-            cfg,
-            |x:&MenuRes| x.in_bounds(&sys.len()),
-        );
-        match input{
-            MenuRes::Enter(v) => {return Some(SystemID::new(v));}
-            MenuRes::Exit |
-            MenuRes::Del => {
+        let input: MenuRes = get_from_input_valid("Enter the system you want", "Please enter a valid entry", cfg, |x: &MenuRes| {
+            x.in_bounds(&sys.len())
+        });
+        match input {
+            MenuRes::Enter(v) => {
+                return Some(SystemID::new(v));
+            }
+            MenuRes::Exit | MenuRes::Del => {
                 return None;
             }
-            MenuRes::Paste => {
-                match &cfg.cpb{
-                    Clipboard::SystemID(v) => return Some(*v),
-                    _ => {wait_for_input(&format!("{}You can't paste that there!", ansi::RED), cfg)}
-                }
-            }
+            MenuRes::Paste => match &cfg.cpb {
+                Clipboard::SystemID(v) => return Some(*v),
+                _ => wait_for_input(&format!("{}You can't paste that there!", ansi::RED), cfg),
+            },
             _ => {
                 wait_for_input(&format!("{}Please enter a valid entry", ansi::RED), cfg);
             }

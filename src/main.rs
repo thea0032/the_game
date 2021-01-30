@@ -1,10 +1,12 @@
 #![allow(clippy::ptr_arg)]
 
+use std::io::repeat;
+
 use component::Components;
 use instr::Directions;
 use resources::ResourceDict;
 use systems::Systems;
-use ui::config::Config;
+use ui::config::{get_str_raw, Config};
 mod component;
 mod extra_bits;
 mod file;

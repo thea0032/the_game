@@ -1,14 +1,22 @@
-use std::{fs::File, io::{Write, stdin, stdout}, iter::Map, str::FromStr};
+use std::{
+    fs::File,
+    io::{stdin, stdout, Write},
+    str::FromStr,
+};
 
-use super::{clipboard::Clipboard, defaults, io::wait_for_input};
+use crate::component::init;
+
+use super::{clipboard::Clipboard, defaults};
 
 const PATH: &str = "stuff";
 pub struct Config {
-    play_queue: Vec<String>, //Stuff being played will appear here.
-    line_queue: Vec<String>, //Stuff being parsed will appear here.
-    write_to: Option<File>,          //The file we write to.
-    keys: Vec<Key>,          //Each key, and what it does.
-    pub cpb: Clipboard,      //Clipboard.
+    play_queue: Vec<String>,    //Stuff being played will appear here.
+    line_queue: Vec<String>,    //Stuff being parsed will appear here.
+    write_to: Option<File>,     //The file we write to.
+    keys: Vec<Key>,             //Each key, and what it does.
+    pub cpb: Clipboard,         //Clipboard.
+    contexts: Vec<Vec<String>>, //Contexts
+    display: Vec<Vec<bool>>,    //Whether these functions are displayed, based on context
 } //The configuration structure. Contains a variety of things.
 
 impl Config {
@@ -21,16 +29,17 @@ impl Config {
     pub const COPY: usize = 6;
     pub const PASTE: usize = 7;
     pub const INFO: usize = 8;
-    pub const FUNCTIONS: &'static [&'static str] = &["quit", "tick", "delete", "new", "help", "separate", "copy", "paste", "information"];//Constants that correspond to keys and give data
+    pub const FUNCTIONS: &'static [&'static str] = &["quit", "tick", "delete", "new", "help", "separate", "copy", "paste", "information"]; //Constants that correspond to keys and give data
     pub fn setup() -> Config {
-        println!("You will now be prompted to configure how inputting works.");//We configure how inputting works:
-        let playing: bool = get_from_input_raw("Configuration: Do you want to play what was recorded?", "Please enter true or false.");//If we're playing some input
+        println!("You will now be prompted to configure how inputting works."); //We configure how inputting works:
+        let playing: bool = get_from_input_raw("Configuration: Do you want to play what was recorded?", "Please enter true or false."); //If we're playing some input
         let recording: bool = if !playing {
-            get_from_input_raw("Do you want to record?", "Please enter true or false.")//If we're recording
+            get_from_input_raw("Do you want to record?", "Please enter true or false.") //If we're recording
         } else {
-            false//If we're playing, we're not recording. 
+            false //If we're playing, we're not recording.
         };
-        let queue = if playing {//If we're 
+        let queue = if playing {
+            //If we're
             crate::file::ensure_file_exists(PATH);
             crate::file::read_file(PATH.to_string())
         } else {
@@ -43,7 +52,10 @@ impl Config {
             write_to,
             keys: Vec::new(),
             cpb: Clipboard::None,
-        };//Initializes config
+            contexts: Vec::new(),
+            display: Vec::new(),
+        }; //Initializes config
+        super::context::init(&mut cfg);
         cfg.keys.push(Key {
             id: defaults::QUIT.to_string(),
             show: true,
@@ -75,51 +87,51 @@ impl Config {
         cfg.keys.push(Key {
             id: defaults::PASTE.to_string(),
             show: true,
-        });//Adds default keys
+        }); //Adds default keys
         cfg.keys.push(Key {
             id: defaults::INFO.to_string(),
             show: true,
-        });//Adds default keys
-        cfg.configure();//Allows you to configure it
-        cfg//Returns
+        }); //Adds default keys
+        cfg.configure(); //Allows you to configure it
+        cfg //Returns
     }
     pub fn quit(&self) -> &Key {
         &self.keys[Self::QUIT]
-    }//Returns the key
+    } //Returns the key
     pub fn tick(&self) -> &Key {
         &self.keys[Self::TICK]
-    }//Returns the key
+    } //Returns the key
     pub fn delete(&self) -> &Key {
         &self.keys[Self::DELETE]
-    }//Returns the key
+    } //Returns the key
     pub fn help(&self) -> &Key {
         &self.keys[Self::HELP]
-    }//Returns the key
+    } //Returns the key
     pub fn new_key(&self) -> &Key {
         &self.keys[Self::NEW]
-    }//Returns the key
+    } //Returns the key
     pub fn copy(&self) -> &Key {
         &self.keys[Self::COPY]
-    }//Returns the key
+    } //Returns the key
     pub fn paste(&self) -> &Key {
         &self.keys[Self::PASTE]
-    }//Returns the key
+    } //Returns the key
     pub fn sep(&self) -> &Key {
         &self.keys[Self::SEP]
-    }//Returns the key
+    } //Returns the key
     pub fn info(&self) -> &Key {
         &self.keys[Self::INFO]
-    }//Returns the key
-    pub fn play_queue(&mut self) -> &mut Vec<String>{
+    } //Returns the key
+    pub fn play_queue(&mut self) -> &mut Vec<String> {
         &mut self.play_queue
     }
-    pub fn line_queue(&mut self) -> &mut Vec<String>{
+    pub fn line_queue(&mut self) -> &mut Vec<String> {
         &mut self.line_queue
     }
-    pub fn write_to(&mut self) -> &mut Option<File>{
+    pub fn write_to(&mut self) -> &mut Option<File> {
         &mut self.write_to
     }
-    pub const EMPTY: &'static str = "EMPTY\0\t";//Empty string; can't be replicated
+    pub const EMPTY: &'static str = "EMPTY\0\t"; //Empty string; can't be replicated
     pub fn configure(&mut self) {
         loop {
             println!("You will now be directed to configure the interface. Choose the key you want to modify: ");
@@ -154,31 +166,41 @@ impl Config {
             }
         }
     }
-    pub fn generate_context(&self) -> Vec<String>{
+    pub fn generate_context(&self) -> Vec<String> {
         Self::FUNCTIONS.iter().map(|x| x.to_string()).collect()
     }
-    pub fn generate_display(&self) -> Vec<bool>{
+    pub fn generate_display(&self) -> Vec<bool> {
         vec![true; Self::FUNCTIONS.len()]
     }
-    pub fn update_context(&self, id:usize, new:Option<String>, curr:&mut Vec<String>, will_display:&mut Vec<bool>){
-        match new{ 
-            Some(val) => {curr[id] = val; will_display[id] = true;},
+    pub fn update_context(&self, id: usize, new: Option<String>, curr: &mut Vec<String>, will_display: &mut Vec<bool>) {
+        match new {
+            Some(val) => {
+                curr[id] = val;
+                will_display[id] = true;
+            }
             None => will_display[id] = false,
         }
     }
-    pub fn update_context_all(&self, will_display:&mut Vec<bool>){
-        for line in will_display{
+    pub fn update_context_all(&self, will_display: &mut Vec<bool>) {
+        for line in will_display {
             *line = false;
         }
     }
-    pub fn display(&mut self, context:&Vec<String>, will_display:&Vec<bool>) -> String{
-        let mut res:String = "".to_string();
-        for (i, key) in self.keys.iter().enumerate(){
-            if key.show() && will_display[i]{
-                res.push_str(&format!("{}. {}\n", key.id(), context[i]));
+    pub fn display(&mut self, context: usize) -> String {
+        let mut res: String = "".to_string();
+        for (i, key) in self.keys.iter().enumerate() {
+            if key.show() && self.display[context][i] {
+                res.push_str(&format!("{}. {}\n", key.id(), self.contexts[context][i]));
             }
         }
         return res;
+    }
+    pub fn add_context(&mut self, update: fn(&mut Vec<String>, &mut Vec<bool>, &Config)) {
+        let mut ctx = self.generate_context();
+        let mut dis = self.generate_display();
+        update(&mut ctx, &mut dis, &self);
+        self.contexts.push(ctx);
+        self.display.push(dis);
     }
 }
 pub struct Key {
@@ -211,7 +233,7 @@ impl Key {
         }
     }
 }
-fn get_str_raw(msg: &str) -> String {
+pub fn get_str_raw(msg: &str) -> String {
     print!("{}", msg); //Prints out the message
     let _ = stdout().flush(); //Flushes output
     let mut s = String::new(); //Initializes string

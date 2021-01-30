@@ -1,6 +1,6 @@
 use crate::location::Location;
 
-use super::{config::Config, io::{get_from_input, }};
+use super::{config::Config, io::get_from_input};
 
 pub fn get_location(cfg: &mut Config) -> Location {
     let x: f64 = get_from_input("Where do you want to put it (x)?", "please enter a valid number", cfg); //Gets x location from input

@@ -1,5 +1,10 @@
-use crate::{component::{ComponentID, RecipeID}, instr::{Instr, Instrs, Queue, Quickie}, resources::{ResourceID, Resources}, systems::{object_id::ObjectID, system_id::SystemID}};
 use crate::object::template::Template;
+use crate::{
+    component::{ComponentID, RecipeID},
+    instr::{Instr, Instrs, Queue, Quickie},
+    resources::{ResourceID, Resources},
+    systems::{object_id::ObjectID, system_id::SystemID},
+};
 
 #[derive(Clone)]
 pub enum Clipboard {

@@ -93,7 +93,7 @@ impl Components {
         }
         x
     }
-    pub fn display_one(&self, rss: &ResourceDict, id:ComponentID) -> String {
+    pub fn display_one(&self, rss: &ResourceDict, id: ComponentID) -> String {
         let mut x: String = "".to_string();
         x.push_str(&format!("{}: {}", id.id(), &self.names[id.id()]));
         x.push('\n');
@@ -130,7 +130,7 @@ impl Components {
         }
         x
     }
-    pub fn display_one_r(&self, rss: &ResourceDict, i:RecipeID) -> String {
+    pub fn display_one_r(&self, rss: &ResourceDict, i: RecipeID) -> String {
         let mut x: String = "".to_string();
         x.push_str(&format!("{}: {}", i.id, &self.recipe_names[i.id]));
         x.push('\n');
@@ -237,7 +237,7 @@ impl RecipeID {
     pub fn new(id: usize) -> RecipeID {
         RecipeID { id }
     } //new
-    pub fn id(&self) -> usize{
+    pub fn id(&self) -> usize {
         self.id
-    } 
+    }
 }

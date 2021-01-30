@@ -1,21 +1,24 @@
 #[allow(dead_code)]
 pub mod ansi;
-pub mod component;
-pub mod condition;
-pub mod defaults;
-pub mod from_str;
-pub mod instr;
-pub mod io;
-pub mod location;
-pub mod object;
-pub mod quickie;
-pub mod rand;
-pub mod recipe;
-pub mod resources;
-pub mod system;
+mod clipboard;
+mod component;
+mod condition;
 pub mod config;
-pub mod clipboard;
-pub mod info;
+mod context;
+mod defaults;
+mod from_str;
+mod info;
+mod instr;
+mod io;
+mod location;
+mod object;
+mod quickie;
+pub mod rand;
+mod recipe;
+pub mod resources;
+mod select;
+mod system;
+mod instrs;
 
 use from_str::{BooleanDefNo, InBounds};
 
@@ -27,16 +30,8 @@ use self::{clipboard::Clipboard, config::Config, from_str::MenuRes};
 pub fn menu(rss: &ResourceDict, cmp: &mut Components, sys: &mut Systems, dir: &mut Directions, cfg: &mut Config) {
     loop {
         println!("{}", ansi::RESET); //Resets the coloring
-        let mut ctx = cfg.generate_context();
-        let mut dis = cfg.generate_display();
-        cfg.update_context(Config::QUIT, Some("quit the game".to_string()), &mut ctx, &mut dis);
-        cfg.update_context(Config::NEW, None, &mut ctx, &mut dis);
-        cfg.update_context(Config::DELETE, None, &mut ctx, &mut dis);
-        cfg.update_context(Config::COPY, None, &mut ctx, &mut dis);
-        cfg.update_context(Config::PASTE, None, &mut ctx, &mut dis);
-        println!("{}", cfg.display(&ctx, &dis));
+        println!("{}", cfg.display(context::MENU));
         println!("{}", sys.display()); //Displays options
-        
         let response: MenuRes = get_from_input_valid("", "Please enter a valid input.", cfg, |x: &MenuRes| x.in_bounds(&sys.len())); //Gets input
         match response {
             MenuRes::Tick => sys.tick(rss, cmp, dir),                                        //Ticks
@@ -64,3 +59,10 @@ pub fn menu(rss: &ResourceDict, cmp: &mut Components, sys: &mut Systems, dir: &m
         };
     } //As long as we can...
 } //Basic menu function
+pub fn menu_context(ctx: &mut Vec<String>, dis: &mut Vec<bool>, cfg: &Config) {
+    cfg.update_context(Config::QUIT, Some("quit the game".to_string()), ctx, dis);
+    cfg.update_context(Config::NEW, None, ctx, dis);
+    cfg.update_context(Config::DELETE, None, ctx, dis);
+    cfg.update_context(Config::COPY, None, ctx, dis);
+    cfg.update_context(Config::PASTE, None, ctx, dis);
+}

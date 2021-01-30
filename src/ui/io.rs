@@ -1,7 +1,4 @@
-
-use std::{
-    io::{stdin, stdout, Write},
-};
+use std::io::{stdin, stdout, Write};
 
 use crate::file::FilePresets;
 
@@ -16,7 +13,7 @@ use super::ansi;
 pub fn get_str_unparsed(msg: &str, cfg: &mut Config) -> String {
     print!("{}", msg); //Prints out the message
     let _ = stdout().flush(); //Flushes output
-    if !cfg.play_queue().is_empty(){
+    if !cfg.play_queue().is_empty() {
         //If the queue isn't empty...
         return cfg.play_queue().remove(0); //Gets, removes, and returns the latest input
     }

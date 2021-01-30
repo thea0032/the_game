@@ -2,6 +2,7 @@ use info::information;
 use location::get_location;
 use quickie::quickie;
 use resources::get_resource_filtered;
+use select::generic_select;
 
 use crate::{
     component::*,
@@ -14,7 +15,9 @@ use crate::{
     systems::{object_id::ObjectID, system_id::SystemID},
     ui::io::*,
 };
-pub fn make_object(rss: &ResourceDict, cmp: &mut Components, sys: &mut Systems, dir: &mut Directions, system: SystemID, cfg: &mut Config) -> Option<ObjectID>{
+pub fn make_object(
+    rss: &ResourceDict, cmp: &mut Components, sys: &mut Systems, dir: &mut Directions, system: SystemID, cfg: &mut Config,
+) -> Option<ObjectID> {
     let name: String = get_str("What do you want to call your new object?", cfg); //Gets the object's name from input
     let loc = get_location(cfg); //Gets the object's location from input
     if get_from_input("Are you sure?", "Please enter true or false", cfg) {
@@ -42,12 +45,7 @@ pub fn object_menu(rss: &ResourceDict, cmp: &mut Components, sys: &mut Systems, 
         println!("Viewing {} ", sys.get_o(obj).name());
         println!("{}", sys.get_o(obj).display(rss, cmp));
         println!("Options: ");
-        let mut ctx = cfg.generate_context();
-        let mut dis = cfg.generate_display();
-        cfg.update_context(Config::QUIT, Some("exit to system menu".to_string()), &mut ctx, &mut dis);
-        cfg.update_context(Config::NEW, Some("install a component".to_string()), &mut ctx, &mut dis);
-        cfg.update_context(Config::DELETE, Some("remove a component".to_string()), &mut ctx, &mut dis);
-        println!("{}", cfg.display(&ctx, &dis));
+        println!("{}", cfg.display(context::OBJECT_MENU));
         println!("0. Use a recipe ");
         println!("1. Transfer resources to another object: ");
         println!("{}", ansi::BLUE);
@@ -55,59 +53,62 @@ pub fn object_menu(rss: &ResourceDict, cmp: &mut Components, sys: &mut Systems, 
         println!("3. Enter quick instruction menu (all quick instructions are done every turn");
         print!("{}", ansi::RESET); //Displays options
         let len: usize = 4;
-        let response: MenuRes = get_from_input_valid("", "Please enter a valid input.", cfg, |x:&MenuRes| x.in_bounds(&len)); //Gets response
+        let response: MenuRes = get_from_input_valid("", "Please enter a valid input.", cfg, |x: &MenuRes| x.in_bounds(&len)); //Gets response
         match response {
-            MenuRes::Tick => sys.tick(rss, cmp, dir),                                      //Advance 1 tick
-            MenuRes::Exit => break,                                                        //Break out of menu
-            MenuRes::New => add_component(cmp, sys.get_o(obj), cfg),                      //Add component
-            MenuRes::Del => remove_component(cmp, sys.get_o(obj), cfg),                   //Remove component
+            MenuRes::Tick => sys.tick(rss, cmp, dir),                                          //Advance 1 tick
+            MenuRes::Exit => break,                                                            //Break out of menu
+            MenuRes::New => add_component(cmp, sys.get_o(obj), cfg),                           //Add component
+            MenuRes::Del => remove_component(cmp, sys.get_o(obj), cfg),                        //Remove component
             MenuRes::Enter(0) => recipe::perform_recipe(cmp, sys.get_o(obj), cfg),             //Perform recipe
             MenuRes::Enter(1) => transfer(rss, sys, obj, cfg),                                 //Transfer resources
-            MenuRes::Enter(2) => instr::instrs_menu(sys, obj, cmp, rss, dir.instrs(obj), cfg), /* Enter instructions menu */
+            MenuRes::Enter(2) => instrs::instrs_menu(sys, obj, cmp, rss, dir.instrs(obj), cfg), /* Enter instructions menu */
             MenuRes::Enter(3) => quickie(rss, cmp, sys, dir.quickie(obj), obj, cfg),           /* Enter quick */
             // instructions
             // menu
             MenuRes::Copy => {
                 cfg.cpb = Clipboard::Template(sys.get_o(obj).to_template(cmp, rss, "pasted template".to_string()));
-            },
-            MenuRes::Paste => {
-                match &cfg.cpb{
-                    Clipboard::Template(_) => {}
-                    Clipboard::Object(_) => {}
-                    Clipboard::Instrs(val) => {
-                        for line in val.get_queues(){
-                            dir.instrs(obj).add(line.clone(), "pasted queue".to_string(), );
-                        }
-                        wait_for_input(&format!("{}Queue pasted!", ansi::GREEN), cfg);
-                    }
-                    Clipboard::Queue(val) => {
-                        dir.instrs(obj).add(val.clone(), "pasted queue".to_string());
-                        wait_for_input(&format!("{}Queue pasted!", ansi::GREEN), cfg);
-                    }
-                    Clipboard::Instr(val, del) => {
-                        dir.quickie(obj).ins(0, val.clone(), del.clone());
-                        wait_for_input(&format!("{}Queue pasted!", ansi::GREEN), cfg);
-                    }
-                    Clipboard::Quickie(val) => {
-                        for (i, line) in val.get_dirs().iter().enumerate(){
-                            dir.quickie(obj).ins(0, line.clone(), val.get_del()[i]);
-                        }
-                        wait_for_input(&format!("{}Queue pasted!", ansi::GREEN), cfg);
-                    }
-                    Clipboard::Resources(_) => {}
-                    _ => {
-                        wait_for_input(&format!("{}You can't paste that there!", ansi::RED), cfg);
-                    }
-                }
             }
+            MenuRes::Paste => match &cfg.cpb {
+                Clipboard::Template(_) => {}
+                Clipboard::Object(_) => {}
+                Clipboard::Instrs(val) => {
+                    for line in val.get_queues() {
+                        dir.instrs(obj).add(line.clone(), "pasted queue".to_string());
+                    }
+                    wait_for_input(&format!("{}Queue pasted!", ansi::GREEN), cfg);
+                }
+                Clipboard::Queue(val) => {
+                    dir.instrs(obj).add(val.clone(), "pasted queue".to_string());
+                    wait_for_input(&format!("{}Queue pasted!", ansi::GREEN), cfg);
+                }
+                Clipboard::Instr(val, del) => {
+                    dir.quickie(obj).ins(0, val.clone(), del.clone());
+                    wait_for_input(&format!("{}Queue pasted!", ansi::GREEN), cfg);
+                }
+                Clipboard::Quickie(val) => {
+                    for (i, line) in val.get_dirs().iter().enumerate() {
+                        dir.quickie(obj).ins(0, line.clone(), val.get_del()[i]);
+                    }
+                    wait_for_input(&format!("{}Queue pasted!", ansi::GREEN), cfg);
+                }
+                Clipboard::Resources(_) => {}
+                _ => {
+                    wait_for_input(&format!("{}You can't paste that there!", ansi::RED), cfg);
+                }
+            },
             MenuRes::Info => {
                 information(rss, cmp, cfg);
-            },
+            }
             MenuRes::Enter(_) => {
                 get_str("Something went horribly wrong!", cfg);
             }
         };
     }
+}
+pub fn object_menu_context(ctx: &mut Vec<String>, dis: &mut Vec<bool>, cfg: &Config) {
+    cfg.update_context(Config::QUIT, Some("exit to system menu".to_string()), ctx, dis);
+    cfg.update_context(Config::NEW, Some("install a component".to_string()), ctx, dis);
+    cfg.update_context(Config::DELETE, Some("remove a component".to_string()), ctx, dis);
 }
 pub fn transfer(rss: &ResourceDict, sys: &mut Systems, obj: ObjectID, cfg: &mut Config) {
     let temp = sys.get_o(obj).resources().get_currs().clone(); //Gets current resources
@@ -142,7 +143,11 @@ pub fn transfer(rss: &ResourceDict, sys: &mut Systems, obj: ObjectID, cfg: &mut 
         cfg,
         |x| x <= &total_cap[resource.get()],
     );
-    let other = if let Some(val) = select_object_docked(sys, obj, cfg){val} else {return};
+    let other = if let Some(val) = select_object_docked(sys, obj, cfg) {
+        val
+    } else {
+        return;
+    };
     if !sys.get_o(obj).resources_mut().rmv_res(resource, amt) {
         println!("The transfer failed somehow!");
         wait_for_input("Press enter to continue:", cfg);
@@ -163,32 +168,17 @@ pub fn transfer(rss: &ResourceDict, sys: &mut Systems, obj: ObjectID, cfg: &mut 
     wait_for_input("Press enter to continue:", cfg); //Waits
 }
 pub fn get_object(sys: &Systems, system: SystemID, cfg: &mut Config) -> Option<ObjectID> {
-    loop{
-        let mut ctx = cfg.generate_context();
-        let mut dis = cfg.generate_display();
-        cfg.update_context_all(&mut dis);
-        cfg.update_context(Config::PASTE, Some("paste".to_string()), &mut ctx, &mut dis);
-        cfg.update_context(Config::QUIT, Some("abort".to_string()), &mut ctx, &mut dis);
-        println!("{}", cfg.display(&ctx, &dis));
-        println!("{}", sys.get_s_stat(system).display(sys.get_o_names(), sys)); //Displays all objects in system
-        let input: MenuRes = get_from_input_valid("Enter the object: ", "Please enter a valid number", cfg, |x:&MenuRes| {
-            x.in_bounds(&sys.get_s_stat(system).get_objs().len())
-        }); //Gets input
-        let res = match input{
-            MenuRes::Enter(v) => Some(sys.get_s_stat(system).get_objs()[v]),
-            MenuRes::Exit => None,
-            MenuRes::Del => None,
-            MenuRes::Paste => {
-                if let Clipboard::Object(val) = &cfg.cpb{
-                    return Some(*val);
-                } else {
-                    wait_for_input(&format!("{}You can't paste that here!", ansi::RED), cfg);
-                    continue;
-                }
-            }
-            _ => continue
-        };
-        
-        return res;
-    }
+    generic_select(
+        &sys.get_s_stat(system).display(sys.get_o_names(), sys),
+        sys.get_s_stat(system).get_objs().len(),
+        |x| Some(ObjectID::new(x)),
+        cfg,
+        |x| if let Clipboard::Object(val) = x.cpb { Some(val) } else { None },
+    )
+}
+
+pub fn object_get_context(ctx: &mut Vec<String>, dis: &mut Vec<bool>, cfg: &Config) {
+    cfg.update_context(Config::QUIT, Some("exit to system menu".to_string()), ctx, dis);
+    cfg.update_context(Config::NEW, Some("install a component".to_string()), ctx, dis);
+    cfg.update_context(Config::DELETE, Some("remove a component".to_string()), ctx, dis);
 }
