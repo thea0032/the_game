@@ -1,9 +1,9 @@
-pub fn fill<T>(len: usize, zero: T) -> Vec<T>
+pub fn fill<T>(len: usize, value: T) -> Vec<T>
 where
     T: Copy, {
     let mut res: Vec<T> = Vec::new();
     for _ in 0..len {
-        res.push(zero);
+        res.push(value);
     }
     res
 }

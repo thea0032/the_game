@@ -5,7 +5,7 @@ use super::{ansi, clipboard::Clipboard, config::Config, select::generic_select};
 pub fn get_resource_filtered(rss: &ResourceDict, amts: &Vec<u128>, cfg: &mut Config) -> Option<ResourceID> {
     let filter: Vec<bool> = amts.iter().map(|x| x != &0).collect(); //If the option exists
     let len = filter.iter().filter(|x| **x).count(); //Amount of options
-    generic_select(&rss.display_filtered_addon(&filter, amts), len, |x| Some(ResourceID::new(x)), cfg, |x| if let Clipboard::Resource(val) = x.cpb{Some(val)} else {None})
+    generic_select(&rss.display_filtered_addon(&filter, amts), len, |x| Some(ResourceID::new(x)), cfg, |x| if let Clipboard::Resource(val) = x{Some(*val)} else {None})
     
 }
 pub fn get_transfer_max(rss: &ResourceDict, cap: u128) -> Vec<u128> {

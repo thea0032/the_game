@@ -72,8 +72,8 @@ pub enum MenuRes {
     Exit,
     Del,
     New,
-    Copy,
-    Paste,
+    Copy(Option<usize>),
+    Paste(Option<usize>),
     Info,
 } //
 impl FromString for MenuRes {
@@ -86,14 +86,26 @@ impl FromString for MenuRes {
             Some(MenuRes::Del)
         } else if s == cfg.new_key().id() {
             Some(MenuRes::New)
-        } else if s == cfg.copy().id() {
-            Some(MenuRes::Copy)
-        } else if s == cfg.paste().id() {
-            Some(MenuRes::Paste)
         } else if s == cfg.info().id() {
             Some(MenuRes::Info)
         } else if let Ok(val) = usize::from_str(s) {
             Some(MenuRes::Enter(val))
+        } else if s.contains(cfg.copy().id()) {
+            let mut temp = s.to_string();
+            temp.replace(cfg.copy().id(), "");
+            if let Ok(val) = usize::from_str(&temp){
+                Some(MenuRes::Copy(Some(val)))
+            } else {
+                Some(MenuRes::Copy(None))
+            }
+        } else if s.contains(cfg.paste().id()) {
+            let mut temp = s.to_string();
+            temp.replace(cfg.paste().id(), "");
+            if let Ok(val) = usize::from_str(&temp){
+                Some(MenuRes::Copy(Some(val)))
+            } else {
+                Some(MenuRes::Copy(None))
+            }
         } else {
             None
         }

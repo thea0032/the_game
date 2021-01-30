@@ -3,7 +3,7 @@ use crate::{component::{Components, RecipeID}, extra_bits, object::Object, resou
 use super::{
     clipboard::Clipboard,
     config::Config,
-    from_str::{InBounds, MenuRes},
+    from_str::MenuRes,
     io::{get_from_input, get_from_input_valid, wait_for_input},
     select::generic_select,
 };
@@ -28,7 +28,7 @@ pub fn select_recipe(cmp: &Components, obj: &Object, cfg: &mut Config) -> Option
         len,
         |x| Some(RecipeID::new(extra_bits::filter(x, &filter))),
         cfg,
-        |x| if let Clipboard::Recipe(val) = &x.cpb { Some(*val) } else { None },
+        |x| if let Clipboard::Recipe(val) = &x { Some(*val) } else { None },
     )
 } //Returns a recipe from input unless aborted
 pub fn select_recipe_unfiltered(cmp: &Components, cfg: &mut Config) -> Option<RecipeID> {
@@ -37,7 +37,7 @@ pub fn select_recipe_unfiltered(cmp: &Components, cfg: &mut Config) -> Option<Re
         cmp.len_r(),
         |x| Some(RecipeID::new(x)),
         cfg,
-        |x| if let Clipboard::Recipe(val) = &x.cpb { Some(*val) } else { None },
+        |x| if let Clipboard::Recipe(val) = &x { Some(*val) } else { None },
     )
 } //Returns a recipe from input unless aborted
 pub fn select_recipes_unfiltered(cmp: &Components, cfg: &mut Config) -> Option<(RecipeID, usize)> {
@@ -62,8 +62,12 @@ pub fn r_detail(rss: &ResourceDict, cmp: &mut Components, cfg: &mut Config) {
     if let Some(val) = temp {
         cmp.display_one_r(rss, val);
         match get_from_input::<MenuRes>("Press enter to continue (you can also copy): ", "Please enter a valid input! Try q.", cfg) {
-            MenuRes::Copy => {
-                cfg.cpb = Clipboard::Recipe(val);
+            MenuRes::Copy(v) => {
+                if let Some(v) = v{
+                    cfg.cpb2[v] = Clipboard::Recipe(val);
+                } else {
+                    cfg.cpb = Clipboard::Recipe(val);
+                };
             }
             _ => {}
         }

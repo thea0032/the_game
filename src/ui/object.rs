@@ -1,3 +1,5 @@
+use std::unimplemented;
+
 use info::information;
 use location::get_location;
 use quickie::quickie;
@@ -65,35 +67,40 @@ pub fn object_menu(rss: &ResourceDict, cmp: &mut Components, sys: &mut Systems, 
             MenuRes::Enter(3) => quickie(rss, cmp, sys, dir.quickie(obj), obj, cfg),           /* Enter quick */
             // instructions
             // menu
-            MenuRes::Copy => {
+            MenuRes::Copy(val) => {
+                if let Some(val) = val{
+                    cfg.cpb2[val] = Clipboard::Template(sys.get_o(obj).to_template(cmp, rss, "pasted template".to_string()));
+                }
                 cfg.cpb = Clipboard::Template(sys.get_o(obj).to_template(cmp, rss, "pasted template".to_string()));
             }
-            MenuRes::Paste => match &cfg.cpb {
-                Clipboard::Template(_) => {}
-                Clipboard::Object(_) => {}
-                Clipboard::Instrs(val) => {
-                    for line in val.get_queues() {
-                        dir.instrs(obj).add(line.clone(), "pasted queue".to_string());
+            MenuRes::Paste(val) => {
+                match cfg.clipboard(val) {
+                    Clipboard::Template(_) => unimplemented!(),
+                    Clipboard::Object(_) => unimplemented!(),
+                    Clipboard::Instrs(val) => {
+                        for line in val.get_queues() {
+                            dir.instrs(obj).add(line.clone(), "pasted queue".to_string());
+                        }
+                        wait_for_input(&format!("{}Queue pasted!", ansi::GREEN), cfg);
                     }
-                    wait_for_input(&format!("{}Queue pasted!", ansi::GREEN), cfg);
-                }
-                Clipboard::Queue(val) => {
-                    dir.instrs(obj).add(val.clone(), "pasted queue".to_string());
-                    wait_for_input(&format!("{}Queue pasted!", ansi::GREEN), cfg);
-                }
-                Clipboard::Instr(val, del) => {
-                    dir.quickie(obj).ins(0, val.clone(), del.clone());
-                    wait_for_input(&format!("{}Queue pasted!", ansi::GREEN), cfg);
-                }
-                Clipboard::Quickie(val) => {
-                    for (i, line) in val.get_dirs().iter().enumerate() {
-                        dir.quickie(obj).ins(0, line.clone(), val.get_del()[i]);
+                    Clipboard::Queue(val) => {
+                        dir.instrs(obj).add(val.clone(), "pasted queue".to_string());
+                        wait_for_input(&format!("{}Queue pasted!", ansi::GREEN), cfg);
                     }
-                    wait_for_input(&format!("{}Queue pasted!", ansi::GREEN), cfg);
-                }
-                Clipboard::Resources(_) => {}
-                _ => {
-                    wait_for_input(&format!("{}You can't paste that there!", ansi::RED), cfg);
+                    Clipboard::Instr(val, del) => {
+                        dir.quickie(obj).ins(0, val.clone(), del.clone());
+                        wait_for_input(&format!("{}Queue pasted!", ansi::GREEN), cfg);
+                    }
+                    Clipboard::Quickie(val) => {
+                        for (i, line) in val.get_dirs().iter().enumerate() {
+                            dir.quickie(obj).ins(0, line.clone(), val.get_del()[i]);
+                        }
+                        wait_for_input(&format!("{}Queue pasted!", ansi::GREEN), cfg);
+                    }
+                    Clipboard::Resources(_) => {}
+                    _ => {
+                        wait_for_input(&format!("{}You can't paste that there!", ansi::RED), cfg);
+                    }
                 }
             },
             MenuRes::Info => {
@@ -173,7 +180,7 @@ pub fn get_object(sys: &Systems, system: SystemID, cfg: &mut Config) -> Option<O
         sys.get_s_stat(system).get_objs().len(),
         |x| Some(ObjectID::new(x)),
         cfg,
-        |x| if let Clipboard::Object(val) = x.cpb { Some(val) } else { None },
+        |x| if let Clipboard::Object(val) = x { Some(*val) } else { None },
     )
 }
 

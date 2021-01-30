@@ -1,9 +1,9 @@
 
-use super::{ansi, config::Config, context, from_str::{InBounds, MenuRes}, io::{get_from_input_valid, wait_for_input}};
+use super::{ansi, clipboard::Clipboard, config::Config, context, from_str::{InBounds, MenuRes}, io::{get_from_input_valid, wait_for_input}};
 
 pub fn generic_select<T, P, Cvt>(display: &String, bounds: usize, mut convert: Cvt, cfg: &mut Config, mut paste: P) -> Option<T>
 where
-    P: FnMut(&mut Config) -> Option<T>,
+    P: FnMut(&Clipboard) -> Option<T>,
     Cvt: FnMut(usize) -> Option<T>, {
     loop {
         println!("{}", cfg.display(context::SELECT));
@@ -20,8 +20,13 @@ where
             MenuRes::Exit | MenuRes::Del => {
                 return None;
             }
-            MenuRes::Paste => {
-                if let Some(val) = paste(cfg) {
+            MenuRes::Paste(v) => {
+                let clipboard = if let Some(v) = v{
+                    &cfg.cpb2[v]
+                } else {
+                    &cfg.cpb
+                };
+                if let Some(val) = paste(clipboard) {
                     return Some(val);
                 }
                 wait_for_input(&format!("{}You cannot paste that there!", ansi::RED), cfg);

@@ -4,9 +4,12 @@ use std::{
     str::FromStr,
 };
 
-use crate::component::init;
 
-use super::{clipboard::Clipboard, defaults};
+
+use crate::extra_bits;
+
+use super::defaults;
+use super::clipboard::Clipboard;
 
 const PATH: &str = "stuff";
 pub struct Config {
@@ -14,7 +17,8 @@ pub struct Config {
     line_queue: Vec<String>,    //Stuff being parsed will appear here.
     write_to: Option<File>,     //The file we write to.
     keys: Vec<Key>,             //Each key, and what it does.
-    pub cpb: Clipboard,         //Clipboard.
+    pub cpb2: Vec<Clipboard>,         //Clipboard.
+    pub cpb: Clipboard, //A clipboard
     contexts: Vec<Vec<String>>, //Contexts
     display: Vec<Vec<bool>>,    //Whether these functions are displayed, based on context
 } //The configuration structure. Contains a variety of things.
@@ -52,6 +56,7 @@ impl Config {
             write_to,
             keys: Vec::new(),
             cpb: Clipboard::None,
+            cpb2: Vec::new(),
             contexts: Vec::new(),
             display: Vec::new(),
         }; //Initializes config
@@ -170,7 +175,7 @@ impl Config {
         Self::FUNCTIONS.iter().map(|x| x.to_string()).collect()
     }
     pub fn generate_display(&self) -> Vec<bool> {
-        vec![true; Self::FUNCTIONS.len()]
+        extra_bits::fill(Self::FUNCTIONS.len(), true)
     }
     pub fn update_context(&self, id: usize, new: Option<String>, curr: &mut Vec<String>, will_display: &mut Vec<bool>) {
         match new {
@@ -201,6 +206,18 @@ impl Config {
         update(&mut ctx, &mut dis, &self);
         self.contexts.push(ctx);
         self.display.push(dis);
+    }
+    pub fn clipboard(&mut self, v:Option<usize>) -> &mut Clipboard{
+        if let Some(v) = v{
+            if v >= self.cpb2.len(){
+                for _ in self.cpb2.len()..=v{
+                    self.cpb2.push(Clipboard::None);
+                }
+            }
+            return &mut self.cpb2[v];
+        } else {
+            return &mut self.cpb;
+        }
     }
 }
 pub struct Key {

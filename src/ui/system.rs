@@ -14,8 +14,6 @@ use super::object::get_object;
 pub fn system_menu(rss: &ResourceDict, cmp: &mut Components, sys: &mut Systems, system: SystemID, dir: &mut Directions, cfg: &mut Config) {
     loop {
         println!("Viewing {}", sys.get_s_name(system));
-        let mut ctx = cfg.generate_context();
-        let mut dis = cfg.generate_display();
         println!("{}", cfg.display(context::SYSTEM_MENU));
         println!("{}", sys.get_s_stat(system).display(sys.get_o_names(), sys));
         print!("{}", ansi::RESET); //Print statements are self-explanatory
@@ -32,11 +30,11 @@ pub fn system_menu(rss: &ResourceDict, cmp: &mut Components, sys: &mut Systems, 
                 let actual_id = sys.get_s(system).get_objs()[val];
                 object_menu(rss, cmp, sys, actual_id, dir, cfg)
             }
-            MenuRes::Copy => {
+            MenuRes::Copy(val) => {
                 cfg.cpb = Clipboard::SystemID(system);
                 wait_for_input(&format!("Copied system {} to the clipboard!", sys.get_s_name(system)), cfg);
             }
-            MenuRes::Paste => {
+            MenuRes::Paste(val) => {
                 if let Clipboard::Template(val) = &cfg.cpb.clone() {
                     paste_object(rss, cmp, sys, system, dir, cfg, val);
                 } else if let Clipboard::Object(val) = &cfg.cpb {
@@ -93,16 +91,18 @@ pub fn select_object_filtered(sys: &Systems, id: SystemID, filter: Vec<bool>, cf
         match input {
             MenuRes::Enter(v) => return Some(sys.get_s_stat(id).get_objs()[crate::extra_bits::filter(v, &filter)]),
             MenuRes::Exit | MenuRes::Del => return None,
-            MenuRes::Paste => match &cfg.cpb {
-                Clipboard::Object(val) => {
-                    if filter[val.get()] {
-                        return Some(*val);
-                    } else {
+            MenuRes::Paste(val) => {
+                match &cfg.clipboard(val) {
+                    Clipboard::Object(val) => {
+                        if filter[val.get()] {
+                            return Some(*val);
+                        } else {
+                            wait_for_input(&format!("{}You can't paste that there!", ansi::RED), cfg);
+                        }
+                    },
+                    _ => {
                         wait_for_input(&format!("{}You can't paste that there!", ansi::RED), cfg);
                     }
-                }
-                _ => {
-                    wait_for_input(&format!("{}You can't paste that there!", ansi::RED), cfg);
                 }
             },
             _ => {
@@ -134,7 +134,7 @@ pub fn get_system(sys: &Systems, cfg: &mut Config) -> Option<SystemID> {
             MenuRes::Exit | MenuRes::Del => {
                 return None;
             }
-            MenuRes::Paste => match &cfg.cpb {
+            MenuRes::Paste(val) => match &cfg.clipboard(val) {
                 Clipboard::SystemID(v) => return Some(*v),
                 _ => wait_for_input(&format!("{}You can't paste that there!", ansi::RED), cfg),
             },

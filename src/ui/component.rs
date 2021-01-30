@@ -22,7 +22,7 @@ pub fn select_component_unfiltered(cmp: &Components, cfg: &mut Config) -> Option
         cmp.len(),
         |x| Some(ComponentID::new(x)),
         cfg,
-        |x| if let Clipboard::Component(val) = &mut x.cpb { Some(*val) } else { None },
+        |x| if let Clipboard::Component(val) = &x { Some(*val) } else { None },
     )
 } //Returns a component. None if aborted.
 pub fn select_components_filtered(cmp: &mut Components, v: &Vec<usize>, cfg: &mut Config) -> Option<(ComponentID, usize)> {
@@ -34,7 +34,7 @@ pub fn select_components_filtered(cmp: &mut Components, v: &Vec<usize>, cfg: &mu
         |x| Some(ComponentID::new(filter(x, &is_included))),
         cfg,
         |x| {
-            if let Clipboard::Component(val) = &mut x.cpb {
+            if let Clipboard::Component(val) = &x {
                 if is_included[val.id()] {
                     Some(*val)
                 } else {

@@ -1,3 +1,5 @@
+use std::unimplemented;
+
 use crate::{component::Components, instr::{Instrs, Queue}, resources::ResourceDict, systems::{Systems, object_id::ObjectID}};
 
 use super::{ansi, clipboard::Clipboard, config::Config, context, from_str::{InBounds, MenuRes}, instr::{instr_menu, make_instr, make_queue, select_queue}, io::{get_from_input_valid, wait_for_input}};
@@ -25,19 +27,32 @@ pub fn instrs_menu(sys: &mut Systems, obj: ObjectID, cmp: &Components, rss: &Res
                 let name = instrs.get_name(val);
                 queue_menu(sys, obj, cmp, rss, instrs.get_queue(val), name, cfg)
             } //Enter another queue
-            MenuRes::Copy => cfg.cpb = Clipboard::Instrs(instrs.clone()),
-            MenuRes::Paste => match &cfg.cpb {
-                Clipboard::Instrs(val) => {
-                    instrs.merge(val);
+            MenuRes::Copy(val) => {
+                if let Some(val) = val{
+                    cfg.cpb2[val] = Clipboard::Instrs(instrs.clone());
+                } else {
+                    cfg.cpb = Clipboard::Instrs(instrs.clone());
                 }
-                Clipboard::Queue(val) => {
-                    instrs.add(val.clone(), "pasted queue".to_string());
-                }
-                Clipboard::Instr(val, temp) => {
-                    instrs.add(Queue::new(*temp, val.clone()), "pasted instruction".to_string());
-                }
-                _ => {
-                    wait_for_input(&format!("{}You can't paste that there!", ansi::RED), cfg);
+            },
+            MenuRes::Paste(val) => {
+                let clipboard = if let Some(val) = val{
+                    &cfg.cpb2[val]
+                } else {
+                    &cfg.cpb
+                };
+                match clipboard {
+                    Clipboard::Instrs(val) => {
+                        instrs.merge(val);
+                    }
+                    Clipboard::Queue(val) => {
+                        instrs.add(val.clone(), "pasted queue".to_string());
+                    }
+                    Clipboard::Instr(val, temp) => {
+                        instrs.add(Queue::new(*temp, val.clone()), "pasted instruction".to_string());
+                    }
+                    _ => {
+                        wait_for_input(&format!("{}You can't paste that there!", ansi::RED), cfg);
+                    }
                 }
             },
             _ => {
@@ -101,21 +116,14 @@ pub fn queue_menu(sys: &mut Systems, obj: ObjectID, cmp: &Components, rss: &Reso
                 let temp = queue.len();
                 instr_menu(rss, cmp, sys, obj, queue.get(val), temp, cfg)
             }
-            MenuRes::Copy => cfg.cpb = Clipboard::Queue(queue.clone()),
-            MenuRes::Paste => match cfg.cpb {
-                Clipboard::SystemID(_) => {}
-                Clipboard::Template(_) => {}
-                Clipboard::Object(_) => {}
-                Clipboard::Instrs(_) => {}
-                Clipboard::Queue(_) => {}
-                Clipboard::Quickie(_) => {}
-                Clipboard::Instr(_, _) => {}
-                Clipboard::Resources(_) => {}
-                Clipboard::Recipe(_) => {}
-                Clipboard::Resource(_) => {}
-                Clipboard::Component(_) => {}
-                Clipboard::None => {}
+            MenuRes::Copy(val) => {
+                if let Some(val) = val{
+                    cfg.cpb2[val] = Clipboard::Queue(queue.clone());
+                } else {
+                    cfg.cpb = Clipboard::Queue(queue.clone());
+                }
             },
+            MenuRes::Paste(_) => unimplemented!(),
             _ => wait_for_input(&format!("{}Please enter a valid input.", ansi::RED), cfg),
         }
     }
