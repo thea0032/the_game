@@ -26,7 +26,7 @@ impl Object {
         } else {
             //If the spending succeeds, finalize it.
             self.resources
-                .add_storage_vec(&component.storage().iter().map(|x| x * (amt as u128)).collect());
+                .add_storage_vec(&component.storage().iter().map(|x| x * (amt as u64)).collect());
             self.resources
                 .add_surplus_vec(&component.surplus().iter().map(|x| x * (amt as i64)).collect());
         }
@@ -47,11 +47,11 @@ impl Object {
         }
         amt
     }
-    pub fn force_install_components(&mut self, id: ComponentID, cmp: &mut Components, amt: u128) {
+    pub fn force_install_components(&mut self, id: ComponentID, cmp: &mut Components, amt: u64) {
         let component = cmp.get(id); //Gets component
         self.resources.force_spend(&component.cost().iter().map(|x| x * (amt as i64)).collect()); //Forcefully spends all required resources at once
         self.resources
-            .add_storage_vec(&component.storage().iter().map(|x| x * (amt as u128)).collect()); //Adds the storage benefits of the component.
+            .add_storage_vec(&component.storage().iter().map(|x| x * (amt as u64)).collect()); //Adds the storage benefits of the component.
         self.resources
             .add_surplus_vec(&component.surplus().iter().map(|x| x * (amt as i64)).collect()); //Adds the surplus benefits of the component.
     }

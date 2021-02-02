@@ -108,18 +108,6 @@ impl Components {
         }
         x
     }
-    pub fn display_contained_r(&self, a: &Vec<usize>) -> String {
-        let mut x: String = "".to_string();
-        let mut counter: usize = 0;
-        for (i, item) in a.iter().enumerate() {
-            if *item != 0 {
-                x.push_str(&format!("{}: {} ({})", counter, &self.recipe_names[i], a[i]));
-                x.push_str(", \n");
-                counter += 1;
-            }
-        }
-        x
-    }
     pub fn display_detailed_r(&self, rss: &ResourceDict) -> String {
         let mut x: String = "".to_string();
         for i in 0..self.recipe_list.len() {
@@ -147,7 +135,7 @@ impl Components {
 #[derive(Clone, Debug)]
 pub struct Component {
     surplus: Vec<i64>,
-    storage: Vec<u128>,
+    storage: Vec<u64>,
     cost: Vec<i64>,
 }
 impl Component {
@@ -157,7 +145,7 @@ impl Component {
     pub fn surplus(&self) -> &Vec<i64> {
         &self.surplus
     }
-    pub fn storage(&self) -> &Vec<u128> {
+    pub fn storage(&self) -> &Vec<u64> {
         &self.storage
     }
     pub fn change_cost(&mut self, id: ResourceID, val: i64) {
@@ -166,7 +154,7 @@ impl Component {
     pub fn change_surplus(&mut self, id: ResourceID, val: i64) {
         self.surplus[id.get()] = val;
     }
-    pub fn change_storage(&mut self, id: ResourceID, val: u128) {
+    pub fn change_storage(&mut self, id: ResourceID, val: u64) {
         self.storage[id.get()] = val;
     }
     pub fn new(size: usize) -> Component {

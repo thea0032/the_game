@@ -1,9 +1,5 @@
 use std::io::{stdin, stdout, Write};
 
-use crate::file::FilePresets;
-
-use super::defaults;
-
 use super::from_str::FromString;
 
 use super::config::Config;
@@ -25,9 +21,9 @@ pub fn get_str_unparsed(msg: &str, cfg: &mut Config) -> String {
     if let Some('\r') = s.chars().next_back() {
         s.pop(); //Removes carriage return character
     }
-    if let Some(val) = cfg.write_to() {
+    if let Some(val) = &cfg.write_to_stat() {
         //If we're recording...
-        crate::file::write(val, s.clone());
+        crate::file::write(val, s.clone(), cfg.presets());
     }
     refresh(); //Refreshes stuff
     s //Returns the string

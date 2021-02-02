@@ -4,11 +4,7 @@ use crate::{extra_bits::filter, ui::io::*};
 use super::{clipboard::Clipboard, config::Config, select::generic_select};
 
 pub fn select_components_unfiltered(cmp: &Components, cfg: &mut Config) -> Option<(ComponentID, usize)> {
-    let component = if let Some(val) = select_component_unfiltered(cmp, cfg) {
-        val
-    } else {
-        return None;
-    };
+    let component = select_component_unfiltered(cmp, cfg)?;
     let amt: usize = get_from_input(
         "Enter the amount of installations you want to perform: ",
         "please enter a valid number no higher than the max",
@@ -45,7 +41,7 @@ pub fn select_components_filtered(cmp: &mut Components, v: &Vec<usize>, cfg: &mu
             }
         },
     );
-    let id = if let Some(val) = input { val } else { return None };
+    let id = input?;
     let amt = get_from_input_valid(
         "Enter the amount of components you want to remove",
         "Please enter a valid number",

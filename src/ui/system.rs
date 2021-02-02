@@ -31,13 +31,13 @@ pub fn system_menu(rss: &ResourceDict, cmp: &mut Components, sys: &mut Systems, 
                 object_menu(rss, cmp, sys, actual_id, dir, cfg)
             }
             MenuRes::Copy(val) => {
-                cfg.cpb = Clipboard::SystemID(system);
+                *(cfg.clipboard(val)) = Clipboard::SystemID(system);
                 wait_for_input(&format!("Copied system {} to the clipboard!", sys.get_s_name(system)), cfg);
             }
             MenuRes::Paste(val) => {
-                if let Clipboard::Template(val) = &cfg.cpb.clone() {
+                if let Clipboard::Template(val) = &cfg.clipboard(val).clone() {
                     paste_object(rss, cmp, sys, system, dir, cfg, val);
-                } else if let Clipboard::Object(val) = &cfg.cpb {
+                } else if let Clipboard::Object(val) = &cfg.clipboard(val) {
                     object_menu(rss, cmp, sys, *val, dir, cfg);
                 } else {
                     wait_for_input(&format!("{}You cannot paste that here!", ansi::RED), cfg);
@@ -91,18 +91,16 @@ pub fn select_object_filtered(sys: &Systems, id: SystemID, filter: Vec<bool>, cf
         match input {
             MenuRes::Enter(v) => return Some(sys.get_s_stat(id).get_objs()[crate::extra_bits::filter(v, &filter)]),
             MenuRes::Exit | MenuRes::Del => return None,
-            MenuRes::Paste(val) => {
-                match &cfg.clipboard(val) {
-                    Clipboard::Object(val) => {
-                        if filter[val.get()] {
-                            return Some(*val);
-                        } else {
-                            wait_for_input(&format!("{}You can't paste that there!", ansi::RED), cfg);
-                        }
-                    },
-                    _ => {
+            MenuRes::Paste(val) => match &cfg.clipboard(val) {
+                Clipboard::Object(val) => {
+                    if filter[val.get()] {
+                        return Some(*val);
+                    } else {
                         wait_for_input(&format!("{}You can't paste that there!", ansi::RED), cfg);
                     }
+                }
+                _ => {
+                    wait_for_input(&format!("{}You can't paste that there!", ansi::RED), cfg);
                 }
             },
             _ => {

@@ -9,6 +9,7 @@ mod defaults;
 mod from_str;
 mod info;
 mod instr;
+mod instrs;
 mod io;
 mod location;
 mod object;
@@ -18,7 +19,6 @@ mod recipe;
 pub mod resources;
 mod select;
 mod system;
-mod instrs;
 
 use from_str::{BooleanDefNo, InBounds};
 
@@ -43,21 +43,14 @@ pub fn menu(rss: &ResourceDict, cmp: &mut Components, sys: &mut Systems, dir: &m
                 }
             }
             MenuRes::Copy(_) => {
-                println!("You can't copy here!"); //Nothing to copy here
+                wait_for_input(&format!("{}You can't copy here!", ansi::RED), cfg); //Nothing to copy here
             }
-            MenuRes::Paste(val) => {
-                let clipboard = if let Some(val) = val{
-                    &cfg.cpb2[val]
-                } else {
-                    &cfg.cpb
-                };
-                match clipboard {
-                    Clipboard::SystemID(val) => {
-                        system_menu(rss, cmp, sys, *val, dir, cfg);
-                    }
-                    _ => {
-                        wait_for_input(&format!("{}You can't paste that there!", ansi::RED), cfg);
-                    }
+            MenuRes::Paste(val) => match cfg.clipboard(val) {
+                Clipboard::SystemID(val) => {
+                    system_menu(rss, cmp, sys, *val, dir, cfg);
+                }
+                _ => {
+                    wait_for_input(&format!("{}You can't paste that there!", ansi::RED), cfg);
                 }
             },
             _ => {

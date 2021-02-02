@@ -1,4 +1,9 @@
-use crate::{component::{Components, RecipeID}, extra_bits, object::Object, resources::ResourceDict};
+use crate::{
+    component::{Components, RecipeID},
+    extra_bits,
+    object::Object,
+    resources::ResourceDict,
+};
 
 use super::{
     clipboard::Clipboard,
@@ -10,7 +15,7 @@ use super::{
 
 pub fn select_recipes(cmp: &Components, obj: &Object, cfg: &mut Config) -> Option<(RecipeID, usize)> {
     let amts: Vec<usize> = cmp.recipe_list.iter().map(|x| obj.resources().amt_contained(x.cost_stat())).collect(); //Maximum amount of each recipe
-    let id = if let Some(val) = select_recipe(cmp, obj, cfg){val} else {return None};
+    let id = select_recipe(cmp, obj, cfg)?;
     let amt: usize = get_from_input_valid(
         "Enter the amount of times you want to perform the recipe: ",
         "please enter a valid id",
@@ -41,11 +46,7 @@ pub fn select_recipe_unfiltered(cmp: &Components, cfg: &mut Config) -> Option<Re
     )
 } //Returns a recipe from input unless aborted
 pub fn select_recipes_unfiltered(cmp: &Components, cfg: &mut Config) -> Option<(RecipeID, usize)> {
-    let recipe = if let Some(val) = select_recipe_unfiltered(cmp, cfg) {
-        val
-    } else {
-        return None;
-    };
+    let recipe = select_recipe_unfiltered(cmp, cfg)?;
     let amt: usize = get_from_input(
         "Enter the amount of times you want to perform the recipe: ",
         "please enter a valid id",
@@ -61,15 +62,10 @@ pub fn r_detail(rss: &ResourceDict, cmp: &mut Components, cfg: &mut Config) {
     let temp = select_recipe_unfiltered(cmp, cfg);
     if let Some(val) = temp {
         cmp.display_one_r(rss, val);
-        match get_from_input::<MenuRes>("Press enter to continue (you can also copy): ", "Please enter a valid input! Try q.", cfg) {
-            MenuRes::Copy(v) => {
-                if let Some(v) = v{
-                    cfg.cpb2[v] = Clipboard::Recipe(val);
-                } else {
-                    cfg.cpb = Clipboard::Recipe(val);
-                };
-            }
-            _ => {}
+        if let MenuRes::Copy(v) =
+            get_from_input::<MenuRes>("Press enter to continue (you can also copy): ", "Please enter a valid input! Try q.", cfg)
+        {
+            *(cfg.clipboard(v)) = Clipboard::Recipe(val)
         }
     } else {
         println!("Operation aborted!");

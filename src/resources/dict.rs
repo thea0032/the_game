@@ -1,6 +1,6 @@
 use super::*;
 impl ResourceDict {
-    pub fn new(vals: Vec<String>, t_costs: Vec<u128>) -> ResourceDict {
+    pub fn new(vals: Vec<String>, t_costs: Vec<u64>) -> ResourceDict {
         ResourceDict {
             names: vals,
             transfer_costs: t_costs,
@@ -25,7 +25,7 @@ impl ResourceDict {
     pub fn get(&self, id: ResourceID) -> String {
         self.names[id.get()].clone()
     } //Returns the resource name
-    pub fn get_transfer_costs(&self) -> &Vec<u128> {
+    pub fn get_transfer_costs(&self) -> &Vec<u64> {
         &self.transfer_costs
     } //Returns all of the transfer costs
 }

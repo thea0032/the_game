@@ -4,12 +4,10 @@ use std::{
     str::FromStr,
 };
 
+use crate::{extra_bits, file::FilePresets};
 
-
-use crate::extra_bits;
-
-use super::defaults;
 use super::clipboard::Clipboard;
+use super::defaults;
 
 const PATH: &str = "stuff";
 pub struct Config {
@@ -17,10 +15,11 @@ pub struct Config {
     line_queue: Vec<String>,    //Stuff being parsed will appear here.
     write_to: Option<File>,     //The file we write to.
     keys: Vec<Key>,             //Each key, and what it does.
-    pub cpb2: Vec<Clipboard>,         //Clipboard.
-    pub cpb: Clipboard, //A clipboard
+    cpb2: Vec<Clipboard>,       //Clipboard.
+    cpb: Clipboard,             //A clipboard
     contexts: Vec<Vec<String>>, //Contexts
     display: Vec<Vec<bool>>,    //Whether these functions are displayed, based on context
+    file_presets: FilePresets,
 } //The configuration structure. Contains a variety of things.
 
 impl Config {
@@ -34,7 +33,7 @@ impl Config {
     pub const PASTE: usize = 7;
     pub const INFO: usize = 8;
     pub const FUNCTIONS: &'static [&'static str] = &["quit", "tick", "delete", "new", "help", "separate", "copy", "paste", "information"]; //Constants that correspond to keys and give data
-    pub fn setup() -> Config {
+    pub fn setup(presets: FilePresets) -> Config {
         println!("You will now be prompted to configure how inputting works."); //We configure how inputting works:
         let playing: bool = get_from_input_raw("Configuration: Do you want to play what was recorded?", "Please enter true or false."); //If we're playing some input
         let recording: bool = if !playing {
@@ -44,8 +43,8 @@ impl Config {
         };
         let queue = if playing {
             //If we're
-            crate::file::ensure_file_exists(PATH);
-            crate::file::read_file(PATH.to_string())
+            crate::file::ensure_file_exists(PATH, &presets);
+            crate::file::read_file(PATH, &presets)
         } else {
             Vec::new()
         };
@@ -59,6 +58,7 @@ impl Config {
             cpb2: Vec::new(),
             contexts: Vec::new(),
             display: Vec::new(),
+            file_presets: presets,
         }; //Initializes config
         super::context::init(&mut cfg);
         cfg.keys.push(Key {
@@ -136,6 +136,12 @@ impl Config {
     pub fn write_to(&mut self) -> &mut Option<File> {
         &mut self.write_to
     }
+    pub fn write_to_stat(&self) -> &Option<File> {
+        &self.write_to
+    }
+    pub fn presets(&self) -> &FilePresets {
+        &self.file_presets
+    }
     pub const EMPTY: &'static str = "EMPTY\0\t"; //Empty string; can't be replicated
     pub fn configure(&mut self) {
         loop {
@@ -198,7 +204,7 @@ impl Config {
                 res.push_str(&format!("{}. {}\n", key.id(), self.contexts[context][i]));
             }
         }
-        return res;
+        res
     }
     pub fn add_context(&mut self, update: fn(&mut Vec<String>, &mut Vec<bool>, &Config)) {
         let mut ctx = self.generate_context();
@@ -207,16 +213,16 @@ impl Config {
         self.contexts.push(ctx);
         self.display.push(dis);
     }
-    pub fn clipboard(&mut self, v:Option<usize>) -> &mut Clipboard{
-        if let Some(v) = v{
-            if v >= self.cpb2.len(){
-                for _ in self.cpb2.len()..=v{
+    pub fn clipboard(&mut self, v: Option<usize>) -> &mut Clipboard {
+        if let Some(v) = v {
+            if v >= self.cpb2.len() {
+                for _ in self.cpb2.len()..=v {
                     self.cpb2.push(Clipboard::None);
                 }
             }
-            return &mut self.cpb2[v];
+            &mut self.cpb2[v]
         } else {
-            return &mut self.cpb;
+            &mut self.cpb
         }
     }
 }
@@ -225,13 +231,6 @@ pub struct Key {
     show: bool,
 }
 impl Key {
-    pub fn display(&self, msg: &str) -> Option<String> {
-        if self.show {
-            Some(format!("{}{}", &self.id, msg))
-        } else {
-            None
-        }
-    }
     pub fn id(&self) -> &str {
         &self.id
     }
@@ -243,11 +242,6 @@ impl Key {
     }
     pub fn show_mut(&mut self) -> &mut bool {
         &mut self.show
-    }
-    pub fn print_if(&self, val: &str) {
-        if self.show {
-            println!("{}{}", self.id, val);
-        }
     }
 }
 pub fn get_str_raw(msg: &str) -> String {

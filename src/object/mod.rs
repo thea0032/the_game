@@ -48,7 +48,7 @@ impl Object {
     } //Mutable getter
     pub fn to_template(&self, cmp: &Components, rss: &ResourceDict, name: String) -> Template {
         let mut surplus: Vec<i64> = extra_bits::fill(rss.len(), 0);
-        let mut storage: Vec<u128> = extra_bits::fill(rss.len(), 0);
+        let mut storage: Vec<u64> = extra_bits::fill(rss.len(), 0);
         let mut cost: Vec<i64> = extra_bits::fill(rss.len(), 0); //initializes vectors
         let mut transfer_cost: u64 = 0;
         for (i, line) in self.component_amounts.iter().enumerate() {
@@ -57,7 +57,7 @@ impl Object {
                 surplus[i] += s * (*line as i64);
             }
             for (i, s) in c.storage().iter().enumerate() {
-                storage[i] += s * (*line as u128);
+                storage[i] += s * (*line as u64);
             }
             for (i, s) in c.cost().iter().enumerate() {
                 cost[i] += s * (*line as i64);
@@ -66,7 +66,7 @@ impl Object {
         let mut flag = true;
         for (i, item) in cost.iter().enumerate() {
             if *item > 0 {
-                if rss.get_transfer_costs()[i] == u128::MAX {
+                if rss.get_transfer_costs()[i] == u64::MAX {
                     //If we aren't supposed to be able to transfer something...
                     flag = false;
                     break;

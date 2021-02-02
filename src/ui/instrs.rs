@@ -1,8 +1,21 @@
 use std::unimplemented;
 
-use crate::{component::Components, instr::{Instrs, Queue}, resources::ResourceDict, systems::{Systems, object_id::ObjectID}};
+use crate::{
+    component::Components,
+    instr::{Instrs, Queue},
+    resources::ResourceDict,
+    systems::{object_id::ObjectID, Systems},
+};
 
-use super::{ansi, clipboard::Clipboard, config::Config, context, from_str::{InBounds, MenuRes}, instr::{instr_menu, make_instr, make_queue, select_queue}, io::{get_from_input_valid, wait_for_input}};
+use super::{
+    ansi,
+    clipboard::Clipboard,
+    config::Config,
+    context,
+    from_str::{InBounds, MenuRes},
+    instr::{instr_menu, make_instr, make_queue, select_queue},
+    io::{get_from_input_valid, wait_for_input},
+};
 
 pub fn instrs_menu(sys: &mut Systems, obj: ObjectID, cmp: &Components, rss: &ResourceDict, instrs: &mut Instrs, cfg: &mut Config) {
     loop {
@@ -18,41 +31,28 @@ pub fn instrs_menu(sys: &mut Systems, obj: ObjectID, cmp: &Components, rss: &Res
             MenuRes::Del => {
                 if let Some(pos) = select_queue(instrs, cfg) {
                     instrs.rmv(pos);
-                    wait_for_input(&format!("Queue successfully removed!"), cfg);
+                    wait_for_input(&format!("{}Queue successfully removed!", ansi::GREEN), cfg);
                 } else {
-                    wait_for_input(&format!("Queue removal aborted!"), cfg);
+                    wait_for_input(&format!("{}Queue removal aborted!", ansi::RED), cfg);
                 }
             } //Remove queue
             MenuRes::Enter(val) => {
                 let name = instrs.get_name(val);
                 queue_menu(sys, obj, cmp, rss, instrs.get_queue(val), name, cfg)
             } //Enter another queue
-            MenuRes::Copy(val) => {
-                if let Some(val) = val{
-                    cfg.cpb2[val] = Clipboard::Instrs(instrs.clone());
-                } else {
-                    cfg.cpb = Clipboard::Instrs(instrs.clone());
+            MenuRes::Copy(val) => *(cfg.clipboard(val)) = Clipboard::Instrs(instrs.clone()),
+            MenuRes::Paste(val) => match cfg.clipboard(val) {
+                Clipboard::Instrs(val) => {
+                    instrs.merge(val);
                 }
-            },
-            MenuRes::Paste(val) => {
-                let clipboard = if let Some(val) = val{
-                    &cfg.cpb2[val]
-                } else {
-                    &cfg.cpb
-                };
-                match clipboard {
-                    Clipboard::Instrs(val) => {
-                        instrs.merge(val);
-                    }
-                    Clipboard::Queue(val) => {
-                        instrs.add(val.clone(), "pasted queue".to_string());
-                    }
-                    Clipboard::Instr(val, temp) => {
-                        instrs.add(Queue::new(*temp, val.clone()), "pasted instruction".to_string());
-                    }
-                    _ => {
-                        wait_for_input(&format!("{}You can't paste that there!", ansi::RED), cfg);
-                    }
+                Clipboard::Queue(val) => {
+                    instrs.add(val.clone(), "pasted queue".to_string());
+                }
+                Clipboard::Instr(val, temp) => {
+                    instrs.add(Queue::new(*temp, val.clone()), "pasted instruction".to_string());
+                }
+                _ => {
+                    wait_for_input(&format!("{}You can't paste that there!", ansi::RED), cfg);
                 }
             },
             _ => {
@@ -61,7 +61,7 @@ pub fn instrs_menu(sys: &mut Systems, obj: ObjectID, cmp: &Components, rss: &Res
         }
     }
 } //A menu
-pub fn instrs_menu_context(ctx:&mut Vec<String>, dis:&mut Vec<bool>, cfg:&Config){
+pub fn instrs_menu_context(ctx: &mut Vec<String>, dis: &mut Vec<bool>, cfg: &Config) {
     cfg.update_context_all(dis);
     cfg.update_context(Config::QUIT, Some("exit".to_string()), ctx, dis);
     cfg.update_context(Config::NEW, Some("make a new queue".to_string()), ctx, dis);
@@ -71,8 +71,6 @@ pub fn instrs_menu_context(ctx:&mut Vec<String>, dis:&mut Vec<bool>, cfg:&Config
 pub fn queue_menu(sys: &mut Systems, obj: ObjectID, cmp: &Components, rss: &ResourceDict, queue: &mut Queue, name: String, cfg: &mut Config) {
     loop {
         println!("Viewing queue {}:", name);
-        let mut ctx = cfg.generate_context();
-        let mut dis = cfg.generate_display();
         println!("{}", cfg.display(context::QUEUE_MENU));
         println!("{}", queue.display(obj, sys, rss, cmp)); //Displays stuff
         let input: MenuRes = get_from_input_valid("", "Please enter a valid input.", cfg, |x: &MenuRes| x.in_bounds(&queue.len())); //Gets input
@@ -116,20 +114,14 @@ pub fn queue_menu(sys: &mut Systems, obj: ObjectID, cmp: &Components, rss: &Reso
                 let temp = queue.len();
                 instr_menu(rss, cmp, sys, obj, queue.get(val), temp, cfg)
             }
-            MenuRes::Copy(val) => {
-                if let Some(val) = val{
-                    cfg.cpb2[val] = Clipboard::Queue(queue.clone());
-                } else {
-                    cfg.cpb = Clipboard::Queue(queue.clone());
-                }
-            },
+            MenuRes::Copy(val) => *cfg.clipboard(val) = Clipboard::Queue(queue.clone()),
             MenuRes::Paste(_) => unimplemented!(),
             _ => wait_for_input(&format!("{}Please enter a valid input.", ansi::RED), cfg),
         }
     }
 }
 
-pub fn queue_context(ctx:&mut Vec<String>, dis:&mut Vec<bool>, cfg:&Config){
+pub fn queue_context(ctx: &mut Vec<String>, dis: &mut Vec<bool>, cfg: &Config) {
     cfg.update_context(Config::QUIT, Some("exit to object menu".to_string()), ctx, dis);
     cfg.update_context(Config::NEW, Some("create a queue".to_string()), ctx, dis);
     cfg.update_context(Config::DELETE, Some("delete a queue".to_string()), ctx, dis);

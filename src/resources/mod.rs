@@ -1,14 +1,16 @@
 pub mod constants;
 pub mod dict;
 
-use std::fmt::Display;
+use std::{cmp, fmt::Display};
+
+use cmp::Ordering;
 
 use crate::{extra_bits::fill, ui::ansi};
 #[derive(Clone, Debug)]
 pub struct Resources {
-    curr: Vec<u128>,   //The amount of resources here
+    curr: Vec<u64>,    //The amount of resources here
     surplus: Vec<i64>, //The current amount increases (or decreases) by this much each tick.
-    cap: Vec<u128>,    //Every resource is reduced to its cap at the end of each tick.
+    cap: Vec<u64>,     //Every resource is reduced to its cap at the end of each tick.
 } //Resources
 impl Resources {
     pub fn new(len: usize) -> Resources {
@@ -26,13 +28,13 @@ impl Resources {
                 //If we have more resources than we have capacity for...
                 self.curr[i] = self.cap[i]; //Delete the extra resources
             }
-            if self.surplus[i] < 0 && self.curr[i] >= (-self.surplus[i]) as u128 {
+            if self.surplus[i] < 0 && self.curr[i] >= (-self.surplus[i]) as u64 {
                 //If we have a negative surplus, but we can still lose a few...
-                self.curr[i] -= (-self.surplus[i]) as u128; //Do it
+                self.curr[i] -= (-self.surplus[i]) as u64; //Do it
                 res.push(false); //We didn't run out of resources yet...
             } else if self.surplus[i] >= 0 {
                 //If we have positive (or zero) surplus...
-                self.curr[i] += self.surplus[i] as u128;
+                self.curr[i] += self.surplus[i] as u64;
                 res.push(false); //We didn't run out of resource, obviously!
             } else {
                 res.push(true); //We ran out!
@@ -40,13 +42,13 @@ impl Resources {
         }
         res
     } //The tick function. For each resource, returns true if
-    pub fn get_curr(&self, id: ResourceID) -> u128 {
+    pub fn get_curr(&self, id: ResourceID) -> u64 {
         self.curr[id.get()]
     } //Gets the current amount of this resource
-    pub fn get_currs(&self) -> &Vec<u128> {
+    pub fn get_currs(&self) -> &Vec<u64> {
         &self.curr
     } //Gets the current amounts of all resources
-    pub fn get_cap(&self, id: ResourceID) -> u128 {
+    pub fn get_cap(&self, id: ResourceID) -> u64 {
         self.cap[id.get()]
     } //Gets the current storage of this resource
     pub fn spend(&mut self, other: &Vec<i64>) -> bool {
@@ -60,15 +62,15 @@ impl Resources {
         for (i, item) in other.iter().enumerate() {
             //Performs the operation
             if *item >= 0 {
-                self.curr[i] -= *item as u128;
+                self.curr[i] -= *item as u64;
             } else {
-                self.curr[i] += (-*item) as u128;
+                self.curr[i] += (-*item) as u64;
             }
         }
         true //We did this operation.
     } //Attempts to spend these resources. Returns true if the operation was
       // successful.
-    pub fn spend_unsigned(&mut self, other: &Vec<u128>) -> bool {
+    pub fn spend_unsigned(&mut self, other: &Vec<u64>) -> bool {
         for (i, item) in other.iter().enumerate() {
             //Same logic as above
             if self.curr[i] < *item {
@@ -102,9 +104,9 @@ impl Resources {
             if (self.curr[i] as i64) < *item {
                 self.curr[i] = 0; //sets value to zero
             } else if *item >= 0 {
-                self.curr[i] -= *item as u128;
+                self.curr[i] -= *item as u64;
             } else {
-                self.curr[i] += -*item as u128;
+                self.curr[i] += -*item as u64;
             }
         }
     } //Forceful spending. Exactly the same as spending, but no check
@@ -116,14 +118,14 @@ impl Resources {
         }
         for (i, item) in other.iter().enumerate() {
             if other[i] >= 0 {
-                self.curr[i] += *item as u128;
+                self.curr[i] += *item as u64;
             } else {
-                self.curr[i] -= (-item) as u128;
+                self.curr[i] -= (-item) as u64;
             }
         }
         true
     } //Like spend, but it's a negative version.
-    pub fn gain_unsigned(&mut self, other: &Vec<u128>) {
+    pub fn gain_unsigned(&mut self, other: &Vec<u64>) {
         for (i, item) in other.iter().enumerate() {
             self.curr[i] += *item;
         }
@@ -133,7 +135,7 @@ impl Resources {
             self.surplus[i] += item;
         }
     } //Gain the values inputted to surplus.
-    pub fn add_storage_vec(&mut self, other: &Vec<u128>) {
+    pub fn add_storage_vec(&mut self, other: &Vec<u64>) {
         for (i, item) in other.iter().enumerate() {
             self.cap[i] += item;
         }
@@ -143,7 +145,7 @@ impl Resources {
             self.surplus[i] -= item;
         }
     } //Same as add_surplus_vec, but negative.
-    pub fn rmv_storage_vec(&mut self, other: &Vec<u128>) -> bool {
+    pub fn rmv_storage_vec(&mut self, other: &Vec<u64>) -> bool {
         for (i, item) in other.iter().enumerate() {
             if self.cap[i] < *item {
                 return false;
@@ -154,7 +156,7 @@ impl Resources {
         }
         true
     } //Spend_unsigned, but removes values from storage instead.
-    pub fn can_rmv_storage_vec(&mut self, other: &Vec<u128>) -> bool {
+    pub fn can_rmv_storage_vec(&mut self, other: &Vec<u64>) -> bool {
         for (i, item) in other.iter().enumerate() {
             if self.cap[i] < *item {
                 return false;
@@ -162,10 +164,10 @@ impl Resources {
         }
         true
     } //rmv_storage_vec, but just checks if it's possible.
-    pub fn add_res(&mut self, id: ResourceID, qty: u128) {
+    pub fn add_res(&mut self, id: ResourceID, qty: u64) {
         self.curr[id.get()] += qty;
     } //Adds a certain amount of a certain resource to the resources.
-    pub fn rmv_res(&mut self, id: ResourceID, qty: u128) -> bool {
+    pub fn rmv_res(&mut self, id: ResourceID, qty: u64) -> bool {
         if self.curr[id.get()] < qty {
             false
         } else {
@@ -174,7 +176,7 @@ impl Resources {
         }
     } //Tries to remove a certain amount of a certain resource from the resources.
       // Returns true if it worked.
-    pub fn rmv_res_force(&mut self, id: ResourceID, qty: u128) {
+    pub fn rmv_res_force(&mut self, id: ResourceID, qty: u64) {
         if self.curr[id.get()] < qty {
             self.curr[id.get()] = 0;
         } else {
@@ -218,15 +220,19 @@ impl Resources {
                 //If this resource should be displayed...
                 flag = true; //We've displayed at least one resource
                 let diff = item - prev[i]; //Calculates difference
-                if diff > zero {
-                    //If we have a positive difference
-                    x.push_str(ansi::GREEN); //The color is green
-                } else if diff == zero {
-                    //If we have no difference
-                    x.push_str(ansi::YELLOW); //The color is yellow
-                } else {
-                    //If we have a negative difference
-                    x.push_str(ansi::RED); //The color is red
+                match diff.cmp(&zero) {
+                    Ordering::Greater => {
+                        //If we have a positive difference
+                        x.push_str(ansi::GREEN); //The color is green
+                    }
+                    Ordering::Equal => {
+                        //If we have no difference
+                        x.push_str(ansi::YELLOW); //The color is yellow
+                    }
+                    Ordering::Less => {
+                        //If we have a negative difference
+                        x.push_str(ansi::RED); //The color is red
+                    }
                 }
                 x.push_str(&a[i].to_string()); //Adds the number
                 x.push(' '); //space
@@ -256,7 +262,7 @@ impl Resources {
         x.push_str(ansi::RESET); //Resets our ansi
         x //Returns the string
     }
-    pub fn change_amt(&mut self, id: ResourceID, new_amt: u128) {
+    pub fn change_amt(&mut self, id: ResourceID, new_amt: u64) {
         self.curr[id.get()] = new_amt;
     } //Basic functions; self-explanatory
 }
@@ -276,9 +282,9 @@ impl ResourceID {
 #[derive(Clone, Debug)]
 pub struct ResourceDict {
     names: Vec<String>,
-    transfer_costs: Vec<u128>,
+    transfer_costs: Vec<u64>,
 } //Resource dictionary; contains helpful information
-pub fn display_vec_one(rss: &ResourceDict, amts: &Vec<u128>, sep: &str) -> String {
+pub fn display_vec_one(rss: &ResourceDict, amts: &Vec<u64>, sep: &str) -> String {
     let mut res = "".to_string(); //Initializes result
     for (i, item) in amts.iter().enumerate() {
         if *item == 0 {

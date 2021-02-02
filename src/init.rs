@@ -1,5 +1,6 @@
 use crate::{
     component::{accessible, init, ComponentID, Components},
+    file::{read_folder, FileObject, FilePresets},
     instr::Directions,
     location::Location,
     resources::ResourceDict,
@@ -46,53 +47,32 @@ pub fn sys(rss: &ResourceDict, cmp: &mut Components, dir: &mut Directions) -> Sy
     }
     sys
 }
-pub fn rss() -> ResourceDict {
-    resources::ResourceDict::new(
-        vec![
-            "Energy".to_string(),
-            "Water".to_string(),
-            "Air".to_string(),
-            "Ore".to_string(),
-            "uranium".to_string(),
-            "Biomass".to_string(),
-            "Food".to_string(),
-            "Metal".to_string(),
-            "Population".to_string(),
-            "Luxuries".to_string(),
-            "Production".to_string(),
-            "Transfer".to_string(),
-            "Fuel".to_string(),
-            "Movement".to_string(),
-            "Space".to_string(),
-            "Living space".to_string(),
-            "Mass".to_string(),
-            "Mining jobs".to_string(),
-            "Uranium mining jobs".to_string(),
-            "Factory jobs".to_string(),
-        ],
-        vec![
-            0,
-            1,
-            1,
-            1,
-            4,
-            5,
-            1,
-            1,
-            10,
-            1,
-            1,
-            0,
-            1,
-            u128::MAX,
-            u128::MAX,
-            u128::MAX,
-            u128::MAX,
-            u128::MAX,
-            u128::MAX,
-            u128::MAX,
-        ],
-    )
+pub const RESOURCES: &str = "Resources";
+pub const TRANSFER_COST: &str = "move cost";
+pub fn rss(file: &FileObject) -> ResourceDict {
+    let res = file.get(RESOURCES);
+    let mut names: Vec<String> = Vec::new();
+    let mut transfer_costs: Vec<u64> = Vec::new();
+    if let Some(val) = res {
+        for (name, data) in val.grab_contents() {
+            names.push(name.clone());
+            if let Some(val) = data.get(TRANSFER_COST) {
+                if let Ok(val) = val.name().parse::<u64>() {
+                    transfer_costs.push(val);
+                } else if val.name() == "MAX" {
+                    transfer_costs.push(u64::MAX);
+                } else {
+                    panic!("{:?} cannot be parsed!", val.name());
+                }
+            } else {
+                panic!("Couldn't find transfer cost for {:?}!", name);
+            }
+        }
+    } else {
+        let _ = 1;
+        panic!("No resource object was found in {:?}!", file);
+    }
+    ResourceDict::new(names, transfer_costs)
 }
 pub fn cmp(rss: &ResourceDict) -> Components {
     let mut cmp = Components::new();
@@ -102,6 +82,17 @@ pub fn cmp(rss: &ResourceDict) -> Components {
 pub fn dir() -> Directions {
     Directions::new()
 }
-pub fn config() -> Config {
-    Config::setup()
+pub fn config(presets: FilePresets) -> Config {
+    Config::setup(presets)
+}
+pub fn load(presets: FilePresets, paths: Vec<&str>) -> FileObject {
+    let mut res: FileObject = FileObject::blank(String::new()); //initializes the result
+    for line in paths {
+        let v = read_folder(&presets, line); //Reads the folder
+        for line in v {
+            //For every file in the folder...
+            res.merge(FileObject::read_from(line, String::new())); //Merges the contents
+        }
+    }
+    return res;
 }

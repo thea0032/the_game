@@ -132,7 +132,7 @@ fn biosphere(rss: &ResourceDict) -> Component {
 }
 fn get_init(rss: &ResourceDict) -> Component {
     let mut res = Component::new(rss.len());
-    res.change_storage(SPACE, u128::MAX);
-    res.change_storage(MASS, u128::MAX);
+    res.change_storage(SPACE, u64::MAX);
+    res.change_storage(MASS, u64::MAX);
     res
 }

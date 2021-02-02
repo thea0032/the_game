@@ -13,10 +13,10 @@ use crate::instr::condition::Condition;
 pub enum Instr {
     Move(Location), //Move to a location.
     Jump(SystemID), //Jump to another system.
-    Transfer(Vec<u128>, ObjectID), /* Transfer resources to another object (moves to it
+    Transfer(Vec<u64>, ObjectID), /* Transfer resources to another object (moves to it
                      * first) */
-    Grab(Vec<u128>, ObjectID), /* Grab resources from another object (moves to it
-                                * first) */
+    Grab(Vec<u64>, ObjectID), /* Grab resources from another object (moves to it
+                               * first) */
     MoveTo(ObjectID), //Moves to another object
     If(Condition, Box<Instr>, Box<Instr>), /* If the condition is true, evaluates the first
                        * condition. Otherwise, evaluates the second
@@ -166,7 +166,7 @@ impl Instr {
                     InstrRes::Continue => return InstrRes::Continue, /* If we aren't done, continue moving instead. */
                 }
                 let mut temp = rss.get_transfer_costs().iter(); //Generates transfer cost.
-                let transfer_cap_cost: u128 = val1.iter().map(|x| x * temp.next().unwrap()).sum(); //Sums transfer costs up.
+                let transfer_cap_cost: u64 = val1.iter().map(|x| x * temp.next().unwrap()).sum(); //Sums transfer costs up.
                 let mut total_cost = val1.clone(); //Generates a clone, that we can manipulate.
                 total_cost[crate::resources::constants::TRANSFER.get()] += transfer_cap_cost; //Adds the cost of transferring resources on.
                 if !sys.get_o(obj).resources_mut().spend_unsigned(&total_cost) {
@@ -187,7 +187,7 @@ impl Instr {
                     InstrRes::Continue => return InstrRes::Continue, /* If we aren't done, continue moving instead. */
                 }
                 let mut temp = rss.get_transfer_costs().iter(); //Generates transfer cost.
-                let transfer_cap_cost: u128 = val1.iter().map(|x| x * temp.next().unwrap()).sum(); //Sums transfer costs up.
+                let transfer_cap_cost: u64 = val1.iter().map(|x| x * temp.next().unwrap()).sum(); //Sums transfer costs up.
                 let mut total_cost = val1.clone(); //Generates a clone, that we can manipulate.
                 total_cost[crate::resources::constants::TRANSFER.get()] += transfer_cap_cost; //Adds the cost of transferring resources on.
                 if !sys.get_o(*val2).resources_mut().spend_unsigned(&total_cost) {
@@ -492,13 +492,13 @@ impl Quickie {
         }
     } //Initializes the structure
     pub fn get_dirs(&self) -> &Vec<Instr> {
-        return &self.dirs;
+        &self.dirs
     }
     pub fn get_res(&self) -> &Vec<InstrRes> {
-        return &self.res;
+        &self.res
     }
     pub fn get_del(&self) -> &Vec<bool> {
-        return &self.del;
+        &self.del
     }
     pub fn exe(&mut self, obj: ObjectID, sys: &mut Systems, rss: &ResourceDict, cmp: &Components) {
         let mut will_remove: Vec<bool> = Vec::new(); //Whether to remove the instructions

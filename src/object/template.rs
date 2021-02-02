@@ -1,37 +1,23 @@
-use crate::{
-    component::Components,
-    resources::ResourceDict,
-    systems::{object_id::ObjectID, Systems},
-    ui::resources,
-};
+use crate::systems::{object_id::ObjectID, Systems};
 
 #[derive(Clone)]
 pub struct Template {
     component_amounts: Vec<usize>,
     name: String,
     surplus: Vec<i64>,
-    storage: Vec<u128>,
+    storage: Vec<u64>,
     cost: Vec<i64>,
     transfer_cost: Option<u64>,
 }
 impl Template {
-    pub fn name(&self) -> &str {
-        &self.name
-    }
-    pub fn c_amt(&self) -> &Vec<usize> {
-        &self.component_amounts
-    }
     pub fn cost(&self) -> &Vec<i64> {
         &self.cost
     }
-    pub fn storage(&self) -> &Vec<u128> {
+    pub fn storage(&self) -> &Vec<u64> {
         &self.storage
     }
     pub fn surplus(&self) -> &Vec<i64> {
         &self.surplus
-    }
-    pub fn t_cost(&self) -> Option<u64> {
-        self.transfer_cost
     }
     pub fn install(&self, obj: ObjectID, sys: &mut Systems) -> bool {
         if sys.get_o(obj).resources_mut().spend(self.cost()) {
@@ -59,7 +45,7 @@ impl Template {
         }
     }
     pub fn new(
-        component_amounts: Vec<usize>, name: String, surplus: Vec<i64>, storage: Vec<u128>, cost: Vec<i64>, transfer_cost: Option<u64>,
+        component_amounts: Vec<usize>, name: String, surplus: Vec<i64>, storage: Vec<u64>, cost: Vec<i64>, transfer_cost: Option<u64>,
     ) -> Template {
         Template {
             component_amounts,

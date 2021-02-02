@@ -1,5 +1,3 @@
-use crate::init::config;
-
 use super::config::Config;
 use std::str::FromStr;
 pub trait FromString {
@@ -48,9 +46,9 @@ impl FromString for f64 {
         None
     }
 }
-impl FromString for u128 {
+impl FromString for u64 {
     fn from_string(s: &str, _: &mut Config) -> Option<Self> {
-        if let Ok(val) = u128::from_str(s) {
+        if let Ok(val) = u64::from_str(s) {
             return Some(val);
         }
         None
@@ -91,20 +89,16 @@ impl FromString for MenuRes {
         } else if let Ok(val) = usize::from_str(s) {
             Some(MenuRes::Enter(val))
         } else if s.contains(cfg.copy().id()) {
-            let mut temp = s.to_string();
-            temp.replace(cfg.copy().id(), "");
-            if let Ok(val) = usize::from_str(&temp){
+            if let Ok(val) = usize::from_str(&s.replace(cfg.copy().id(), "")) {
                 Some(MenuRes::Copy(Some(val)))
             } else {
                 Some(MenuRes::Copy(None))
             }
         } else if s.contains(cfg.paste().id()) {
-            let mut temp = s.to_string();
-            temp.replace(cfg.paste().id(), "");
-            if let Ok(val) = usize::from_str(&temp){
-                Some(MenuRes::Copy(Some(val)))
+            if let Ok(val) = usize::from_str(&s.replace(cfg.paste().id(), "")) {
+                Some(MenuRes::Paste(Some(val)))
             } else {
-                Some(MenuRes::Copy(None))
+                Some(MenuRes::Paste(None))
             }
         } else {
             None

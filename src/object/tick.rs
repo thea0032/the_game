@@ -17,17 +17,17 @@ impl Object {
         self.plant_benefits(); //Plant benefit
     }
     pub fn grow_pops(&mut self) {
-        let pops: u128 = self.resources.get_curr(constants::POPULATION); //Gets current population
+        let pops: u64 = self.resources.get_curr(constants::POPULATION); //Gets current population
         if pops == 0 {
             return;
         } //If there's no population, don't do any of this
-        let housing: u128 = self.resources.get_cap(constants::POPULATION); //Population capacity
+        let housing: u64 = self.resources.get_cap(constants::POPULATION); //Population capacity
         let growth: f64 = (pops as f64) * (1.0 + MAX_GROWTH * ((housing as f64 - pops as f64) / housing as f64) as f64); //Amount of projected growth
-        let grown: u128 = rand::rand_round(growth); //Amount grown; rounded
+        let grown: u64 = rand::rand_round(growth); //Amount grown; rounded
         self.resources.change_amt(constants::POPULATION, grown); //Finalizes changes
     } //Grows the population.
     pub fn pop_benefits(&mut self) {
-        let pops: u128 = self.resources.get_curr(constants::POPULATION); //Each unit of population...
+        let pops: u64 = self.resources.get_curr(constants::POPULATION); //Each unit of population...
         self.resources.add_res(constants::PRODUCTION, pops); //Produces 1
                                                              // production
     } //The population's benefits.
@@ -50,17 +50,17 @@ impl Object {
     } //The population's upkeep
 
     pub fn grow_plants(&mut self) {
-        let pops: u128 = self.resources.get_curr(constants::BIOMASS);
+        let pops: u64 = self.resources.get_curr(constants::BIOMASS);
         if pops == 0 {
             return;
         }
-        let housing: u128 = self.resources.get_cap(constants::BIOMASS);
+        let housing: u64 = self.resources.get_cap(constants::BIOMASS);
         let growth: f64 = (pops as f64) * (1.0 + MAX_GROWTH * ((housing as f64 - pops as f64) / housing as f64) as f64);
-        let grown: u128 = rand::rand_round(growth);
+        let grown: u64 = rand::rand_round(growth);
         self.resources.change_amt(constants::BIOMASS, grown);
     } //Same as grow_pops
     pub fn plant_benefits(&mut self) {
-        let pops: u128 = self.resources.get_curr(constants::BIOMASS);
+        let pops: u64 = self.resources.get_curr(constants::BIOMASS);
         self.resources.add_res(constants::AIR, rand::rand_round(pops as f64 / 10.0));
     } //Same as pop_benefits
     pub const UPKEEP_RSS_PLANTS: &'static [(ResourceID, f64)] = &[(constants::WATER, 0.05)];

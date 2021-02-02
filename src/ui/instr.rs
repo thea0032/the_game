@@ -8,17 +8,15 @@ use crate::{
 
 use super::{
     ansi,
-    clipboard::Clipboard,
     component::{select_component_unfiltered, select_components_unfiltered},
     condition::make_condition,
     config::Config,
-    from_str::{InBounds, MenuRes},
     io::{get_from_input, get_from_input_valid, get_str, wait_for_input},
     location::get_location,
     object::get_object,
     recipe::{select_recipe_unfiltered, select_recipes_unfiltered},
     resources::get_rss,
-    select::{generic_select, generic_select_simple},
+    select::generic_select_simple,
     system::get_system,
 };
 
@@ -93,7 +91,7 @@ pub fn make_jump(sys: &Systems, cfg: &mut Config) -> Instr {
     Instr::Jump(if let Some(val) = get_system(sys, cfg) { val } else { return Instr::Fail }) //Gets a system
 } //Makes a jump instruction from input
 pub fn make_transfer(rss: &ResourceDict, sys: &Systems, cfg: &mut Config) -> Instr {
-    let mut input: Vec<u128> = extra_bits::fill(rss.len(), 0);
+    let mut input: Vec<u64> = extra_bits::fill(rss.len(), 0);
     get_rss(rss, &mut input, cfg);
     let system = if let Some(system) = get_system(sys, cfg) {
         system
@@ -108,7 +106,7 @@ pub fn make_transfer(rss: &ResourceDict, sys: &Systems, cfg: &mut Config) -> Ins
     }
 } //Makes a transfer instruction from input
 pub fn make_grab(rss: &ResourceDict, sys: &Systems, cfg: &mut Config) -> Instr {
-    let mut input: Vec<u128> = extra_bits::fill(rss.len(), 0);
+    let mut input: Vec<u64> = extra_bits::fill(rss.len(), 0);
     get_rss(rss, &mut input, cfg);
     let system = if let Some(system) = get_system(sys, cfg) {
         system
@@ -388,5 +386,5 @@ pub fn parse_options(
     }
 }
 pub fn select_queue(instrs: &mut Instrs, cfg: &mut Config) -> Option<usize> {
-    generic_select_simple(&instrs.display(), instrs.len(), |x| Some(x), cfg)
+    generic_select_simple(&instrs.display(), instrs.len(), Some, cfg)
 }
