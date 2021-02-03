@@ -37,8 +37,6 @@ impl Components {
         &self.recipe_names[id.id]
     } //gets the recipe name from the list
     pub fn init(&mut self, rss: &ResourceDict) {
-        self.add_l(accessible::get_names(), accessible::get_all(rss));
-        self.add_h_l(init::get_names(), init::get_all(rss));
         self.add_r_l(recipe::get_names(), recipe::get_all(rss));
     } //initializes the components object from accessible.rs, init.rs, and recipe.rs
     pub fn new() -> Components {

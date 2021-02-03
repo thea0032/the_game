@@ -1,12 +1,6 @@
-use crate::{
-    component::{accessible, init, ComponentID, Components},
-    file::{read_folder, FileObject, FilePresets},
-    instr::Directions,
-    location::Location,
-    resources::ResourceDict,
-    systems::object_id::ObjectID,
-    systems::{system_id::SystemID, Systems},
-};
+use std::{fs::File, str::FromStr};
+
+use crate::{component::{Component, ComponentID, Components, accessible, init}, file::{read_folder, FileObject, FilePresets}, instr::Directions, location::Location, resources::ResourceDict, systems::object_id::ObjectID, systems::{system_id::SystemID, Systems}};
 use crate::{resources, ui::config::Config};
 pub fn sys(rss: &ResourceDict, cmp: &mut Components, dir: &mut Directions) -> Systems {
     let mut sys = Systems::new();
@@ -48,7 +42,7 @@ pub fn sys(rss: &ResourceDict, cmp: &mut Components, dir: &mut Directions) -> Sy
     sys
 }
 pub const RESOURCES: &str = "Resources";
-pub const TRANSFER_COST: &str = "move cost";
+pub const TRANSFER_COST: &str = "Move Cost";
 pub fn rss(file: &FileObject) -> ResourceDict {
     let res = file.get(RESOURCES);
     let mut names: Vec<String> = Vec::new();
@@ -74,10 +68,76 @@ pub fn rss(file: &FileObject) -> ResourceDict {
     }
     ResourceDict::new(names, transfer_costs)
 }
-pub fn cmp(rss: &ResourceDict) -> Components {
+pub const COMPONENTS: &str = "Components";
+pub const ACCESSIBLE: &str = "Accessible";
+pub const HIDDEN: &str = "Hidden";
+pub fn cmp(rss: &ResourceDict, file:&FileObject) -> Components {
     let mut cmp = Components::new();
+    let mut names:Vec<String> = Vec::new();
+    let mut h_names:Vec<String> = Vec::new();
+    let mut components:Vec<Component> = Vec::new();
+    let mut h_components:Vec<Component> = Vec::new();
+    if let Some(val) = file.get(COMPONENTS){
+        if let Some(val) = val.get(ACCESSIBLE){
+            for (name, val) in val.grab_contents(){
+                names.push(name.clone());
+                components.push(generate_component(val, rss));
+            }
+        }
+        if let Some(val) = val.get(HIDDEN){
+            for (name, val) in val.grab_contents(){
+                h_names.push(name.clone());
+                h_components.push(generate_component(val, rss));
+            }
+        }
+    }
+    cmp.add_l(names, components);
+    cmp.add_h_l(h_names, h_components);
     cmp.init(rss);
     cmp
+}
+pub const COST:&str = "Cost";
+pub const SURPLUS:&str = "Surplus";
+pub const STORAGE:&str = "Storage";
+pub fn generate_component(file: &FileObject, rss:&ResourceDict) -> Component{
+    let mut res = Component::new(rss.len());
+    if let Some(val) = file.get(COST){
+        for (name, new) in val.grab_contents(){
+            if let Some(resource) = rss.find(name){
+                res.change_cost(resource, parse(new, i64::MAX));
+            } else {
+                panic!("{:?} is not inside the resource dictionary!", name);
+            }
+        }
+    }
+    if let Some(val) = file.get(SURPLUS){
+        for (name, new) in val.grab_contents(){
+            if let Some(resource) = rss.find(name){
+                res.change_surplus(resource, parse(new, i64::MAX));
+            } else {
+                panic!("{:?} is not inside the resource dictionary! Contents of resource dictionary: {:?}", name, rss);
+            }
+        }
+    }
+    if let Some(val) = file.get(STORAGE){
+        for (name, new) in val.grab_contents(){
+            if let Some(resource) = rss.find(name){
+                res.change_storage(resource, parse(new, u64::MAX));
+            } else {
+                panic!("{:?} is not inside the resource dictionary!", name);
+            }
+        }
+    }
+    res
+}
+fn parse<T>(obj:&FileObject, max:T) -> T where T:FromStr{
+    if let Ok(val) = obj.name().parse::<T>() {
+        return val;
+    } else if obj.name() == "MAX" {
+        return max;
+    } else {
+        panic!("{:?} cannot be parsed!", obj.name());
+    }
 }
 pub fn dir() -> Directions {
     Directions::new()

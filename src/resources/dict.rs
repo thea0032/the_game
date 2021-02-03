@@ -28,4 +28,7 @@ impl ResourceDict {
     pub fn get_transfer_costs(&self) -> &Vec<u64> {
         &self.transfer_costs
     } //Returns all of the transfer costs
+    pub fn find(&self, name:&str) -> Option<ResourceID>{
+        Some(ResourceID::new(self.names.iter().position(|x| x == name)?))
+    }
 }
