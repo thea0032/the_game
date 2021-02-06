@@ -23,6 +23,22 @@ impl Components {
             &self.hidden_list[id.id]
         }
     } //gets a component from the lists
+    pub fn get_from_name(&self, name: &str) -> ComponentID {
+        for (i, line) in self.names.iter().enumerate() {
+            if line == name {
+                return ComponentID::new(i);
+            }
+        }
+        panic!("{} was not found!", name);
+    }
+    pub fn get_from_name_h(&self, name: &str) -> ComponentID {
+        for (i, line) in self.hidden_names.iter().enumerate() {
+            if line == name {
+                return ComponentID::new_h(i);
+            }
+        }
+        panic!("{} was not found!", name);
+    }
     pub fn get_r(&self, id: RecipeID) -> &Recipe {
         &self.recipe_list[id.id]
     } //gets a recipe from the list

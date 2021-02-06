@@ -1,48 +1,83 @@
-use std::{fs::File, str::FromStr};
 
-use crate::{component::{Component, ComponentID, Components, accessible, init}, file::{read_folder, FileObject, FilePresets}, instr::Directions, location::Location, resources::ResourceDict, systems::object_id::ObjectID, systems::{system_id::SystemID, Systems}};
-use crate::{resources, ui::config::Config};
-pub fn sys(rss: &ResourceDict, cmp: &mut Components, dir: &mut Directions) -> Systems {
-    let mut sys = Systems::new();
-    sys.add_s("Sol".to_string(), Location::new(0.0, 0.0));
-    let id1 = SystemID::new(0);
-    sys.add_o(rss, cmp, dir, "Test Ship".to_string(), Location::new(0.0, 0.0), id1);
-    {
-        let test_ship = sys.get_o(ObjectID::new(0));
-        test_ship.force_install_components(ComponentID::new_h(init::constants::INIT), cmp, 1);
-        test_ship.force_install_components(ComponentID::new(accessible::constants::HULL), cmp, 1);
-        test_ship.force_install_components(ComponentID::new(accessible::constants::HULL), cmp, 1);
-        test_ship.force_install_components(ComponentID::new(accessible::constants::HULL), cmp, 1);
-        test_ship.force_install_components(ComponentID::new(accessible::constants::HULL), cmp, 1);
-        test_ship.force_install_components(ComponentID::new(accessible::constants::ENGINE), cmp, 1);
-        test_ship.force_install_components(ComponentID::new(accessible::constants::BATTERY), cmp, 1);
-        test_ship.force_install_components(ComponentID::new(accessible::constants::LIVING_QUARTERS), cmp, 1);
-        test_ship.force_install_components(ComponentID::new(accessible::constants::STORAGE_SPACE), cmp, 1);
-        test_ship.force_install_components(ComponentID::new(accessible::constants::ENGINE), cmp, 1);
-        //test_ship.force_install_component(ComponentID::new(accessible::
-        // constants::SOLAR_PANELS), cmp);
+use std::{collections::HashMap, str::FromStr};
+
+use crate::ui::config::Config;
+use crate::{
+    component::{Component, Components},
+    file::{read_folder, FileObject, FilePresets},
+    instr::Directions,
+    location::Location,
+    object::Object,
+    resources::{ResourceDict, ResourceID},
+    systems::{system_id::SystemID, Systems},
+};
+pub const SYSTEMS: &str = "Systems";
+pub const OBJECTS: &str = "Objects";
+pub const LOCX: &str = "x";
+pub const LOCY: &str = "y";
+pub const LOCATION: &str = "Location";
+pub fn sys_new(rss: &ResourceDict, cmp: &mut Components, dir: &mut Directions, file: &FileObject) -> Systems {
+    let mut s = Systems::new();
+    if let Some(val) = file.get(SYSTEMS) {
+        //If there's a systems object in the file object...
+        for (name, line) in val.grab_contents() {
+            //For every system in the systems object...
+            s.add_s(name.to_string(), grab_location(line)); //Adds the system based on the location grabbed
+            if let Some(val) = line.get(OBJECTS) {
+                //If there's an objects object in the systems object...
+                for (name, line) in val.grab_contents() {
+                    //For every object in the objects object...
+                    let temp = s.add_o(rss, cmp, dir, name.to_string(), grab_location(line), SystemID::new(s.len() - 1));
+                    init_object(line, s.get_o(temp), cmp, rss);
+                }
+            } else {
+                panic!("Can't find objects!");
+            }
+        }
+    } else {
+        println!("Couldn't find systems object!");
     }
-    sys.add_o(rss, cmp, dir, "Earth".to_string(), Location::new(0.0, 0.0), id1);
-    {
-        let earth = sys.get_o(ObjectID::new(1));
-        earth.force_install_components(ComponentID::new_h(init::constants::INIT), cmp, 1);
-        earth.force_install_components(ComponentID::new_h(init::constants::SMALL_PLANET), cmp, 4);
-        earth.force_install_components(ComponentID::new_h(init::constants::AIR_POCKET), cmp, 4);
-        earth.force_install_components(ComponentID::new_h(init::constants::MINERAL_DEPOSIT), cmp, 4);
-        earth.force_install_components(ComponentID::new_h(init::constants::URANIUM_DEPOSIT), cmp, 4);
-        earth.force_install_components(ComponentID::new_h(init::constants::WATER_POCKET), cmp, 10);
-        earth.force_install_components(ComponentID::new_h(init::constants::BIOSPHERE), cmp, 4);
-        earth.force_install_components(ComponentID::new(accessible::constants::SOLAR_PANELS), cmp, 4);
-        earth.force_install_components(ComponentID::new(accessible::constants::LIVING_QUARTERS), cmp, 10);
-        earth.force_install_components(ComponentID::new(accessible::constants::FACTORY), cmp, 1);
-        earth.force_install_components(ComponentID::new(accessible::constants::STORAGE_SPACE), cmp, 10);
-        earth.resources_mut().add_res(resources::constants::POPULATION, 5);
-        earth.resources_mut().add_res(resources::constants::FOOD, 5);
+    s
+}
+pub fn init_object(file: &FileObject, obj: &mut Object, cmp: &Components, rss: &ResourceDict) {
+    if let Some(val) = file.get(COMPONENTS) {
+        if let Some(val) = val.get(ACCESSIBLE) {
+            for (name, line) in val.grab_contents() {
+                let component = cmp.get_from_name(name);
+                let amt = parse(line, usize::MAX);
+                obj.force_install_components(component, cmp, amt as u64);
+            }
+        }
+        if let Some(val) = val.get(HIDDEN) {
+            for (name, line) in val.grab_contents() {
+                let component = cmp.get_from_name_h(name);
+                let amt = parse(line, u64::MAX);
+                obj.force_install_components(component, cmp, amt);
+            }
+        }
     }
-    sys
+    if let Some(val) = file.get(RESOURCES) {
+        for (name, line) in val.grab_contents() {
+            let resource = if let Some(val) = rss.find(name) {
+                val
+            } else {
+                panic!("Couldn't find resource {:?}", name);
+            };
+            let amt = parse(line, u64::MAX);
+            obj.resources_mut().add_res(resource, amt);
+        }
+    }
+}
+pub fn grab_location(file: &FileObject) -> Location {
+    if let Some(val) = file.get(LOCATION) {
+        Location::new(parse_field(val, f64::MAX, LOCX), parse_field(val, f64::MAX, LOCY))
+    } else {
+        panic!("Couldn't find location of {:?}!", file);
+    }
 }
 pub const RESOURCES: &str = "Resources";
 pub const TRANSFER_COST: &str = "Move Cost";
+const RSSMOD:&str = "ResourceMod";
 pub fn rss(file: &FileObject) -> ResourceDict {
     let res = file.get(RESOURCES);
     let mut names: Vec<String> = Vec::new();
@@ -66,26 +101,70 @@ pub fn rss(file: &FileObject) -> ResourceDict {
         let _ = 1;
         panic!("No resource object was found in {:?}!", file);
     }
-    ResourceDict::new(names, transfer_costs)
+    if let Some(val) = file.get(RSSMOD){
+        let temp = rss_mod(val, &names);
+        ResourceDict::new(names, transfer_costs, temp.0, temp.1, temp.2)
+    } else {
+        ResourceDict::new(names, transfer_costs, HashMap::new(), HashMap::new(), None)
+    }
 }
-pub const COMPONENTS: &str = "Components";
-pub const ACCESSIBLE: &str = "Accessible";
-pub const HIDDEN: &str = "Hidden";
-pub fn cmp(rss: &ResourceDict, file:&FileObject) -> Components {
+const REQUIRES:&str = "Requires";
+const GROWTH:&str = "Growth";
+const TRANSFER:&str = "IsTransfer";
+pub fn rss_mod(
+    file: &FileObject, names: &Vec<String>
+) -> (
+    HashMap<ResourceID, f64>,
+    HashMap<ResourceID, HashMap<ResourceID, f64>>,
+    Option<ResourceID>,
+) {
+    let mut res1:HashMap<ResourceID, f64> = HashMap::new();
+    let mut res2:HashMap<ResourceID, HashMap<ResourceID, f64>> = HashMap::new();
+    let mut res3:Option<ResourceID> = None;
+    for (name, line) in file.grab_contents(){
+        let idpos = ResourceID::new(names.iter().position(|x| x == name).expect(&format!("{:?} is not inside the resource dictionary!", name)));
+        if let Some(val) = line.get(REQUIRES){
+            let mut intermediate:HashMap<ResourceID, f64> = HashMap::new();
+            for (name, new) in val.grab_contents() {
+                if let Some(resource) = names.iter().position(|x| x == name) {
+                    intermediate.insert(idpos, parse(new, f64::MAX));
+                } else {
+                    panic!("{:?} is not inside the resource dictionary!", name);
+                }
+            }
+            res2.insert(idpos, intermediate);
+        }
+        if let Some(val) = line.get(GROWTH){
+            res1.insert(idpos, parse(val, f64::MAX));
+        }
+        if let Some(val) = line.get(TRANSFER){
+            if res3.is_none(){
+                res3 = Some(idpos);
+            } else {
+                panic!("Only one resource can be used as transfer currency!");
+            }
+        }
+    }
+    (res1, res2, res3)
+}
+const COMPONENTS: &str = "Components";
+const ACCESSIBLE: &str = "Accessible";
+const HIDDEN: &str = "Hidden";
+pub fn cmp(rss: &ResourceDict, file: &FileObject) -> Components {
     let mut cmp = Components::new();
-    let mut names:Vec<String> = Vec::new();
-    let mut h_names:Vec<String> = Vec::new();
-    let mut components:Vec<Component> = Vec::new();
-    let mut h_components:Vec<Component> = Vec::new();
-    if let Some(val) = file.get(COMPONENTS){
-        if let Some(val) = val.get(ACCESSIBLE){
-            for (name, val) in val.grab_contents(){
+    let mut names: Vec<String> = Vec::new();
+    let mut h_names: Vec<String> = Vec::new();
+    let mut components: Vec<Component> = Vec::new();
+    let mut h_components: Vec<Component> = Vec::new();
+    if let Some(val) = file.get(COMPONENTS) {
+        if let Some(val) = val.get(ACCESSIBLE) {
+            for (name, val) in val.grab_contents() {
                 names.push(name.clone());
                 components.push(generate_component(val, rss));
             }
         }
-        if let Some(val) = val.get(HIDDEN){
-            for (name, val) in val.grab_contents(){
+        if let Some(val) = val.get(HIDDEN) {
+            for (name, val) in val.grab_contents() {
                 h_names.push(name.clone());
                 h_components.push(generate_component(val, rss));
             }
@@ -96,32 +175,35 @@ pub fn cmp(rss: &ResourceDict, file:&FileObject) -> Components {
     cmp.init(rss);
     cmp
 }
-pub const COST:&str = "Cost";
-pub const SURPLUS:&str = "Surplus";
-pub const STORAGE:&str = "Storage";
-pub fn generate_component(file: &FileObject, rss:&ResourceDict) -> Component{
+pub const COST: &str = "Cost";
+pub const SURPLUS: &str = "Surplus";
+pub const STORAGE: &str = "Storage";
+pub fn generate_component(file: &FileObject, rss: &ResourceDict) -> Component {
     let mut res = Component::new(rss.len());
-    if let Some(val) = file.get(COST){
-        for (name, new) in val.grab_contents(){
-            if let Some(resource) = rss.find(name){
+    if let Some(val) = file.get(COST) {
+        for (name, new) in val.grab_contents() {
+            if let Some(resource) = rss.find(name) {
                 res.change_cost(resource, parse(new, i64::MAX));
             } else {
                 panic!("{:?} is not inside the resource dictionary!", name);
             }
         }
     }
-    if let Some(val) = file.get(SURPLUS){
-        for (name, new) in val.grab_contents(){
-            if let Some(resource) = rss.find(name){
+    if let Some(val) = file.get(SURPLUS) {
+        for (name, new) in val.grab_contents() {
+            if let Some(resource) = rss.find(name) {
                 res.change_surplus(resource, parse(new, i64::MAX));
             } else {
-                panic!("{:?} is not inside the resource dictionary! Contents of resource dictionary: {:?}", name, rss);
+                panic!(
+                    "{:?} is not inside the resource dictionary! Contents of resource dictionary: {:?}",
+                    name, rss
+                );
             }
         }
     }
-    if let Some(val) = file.get(STORAGE){
-        for (name, new) in val.grab_contents(){
-            if let Some(resource) = rss.find(name){
+    if let Some(val) = file.get(STORAGE) {
+        for (name, new) in val.grab_contents() {
+            if let Some(resource) = rss.find(name) {
                 res.change_storage(resource, parse(new, u64::MAX));
             } else {
                 panic!("{:?} is not inside the resource dictionary!", name);
@@ -130,11 +212,22 @@ pub fn generate_component(file: &FileObject, rss:&ResourceDict) -> Component{
     }
     res
 }
-fn parse<T>(obj:&FileObject, max:T) -> T where T:FromStr{
+fn parse<T>(obj: &FileObject, max: T) -> T
+where
+    T: FromStr, {
     if let Ok(val) = obj.name().parse::<T>() {
         return val;
     } else if obj.name() == "MAX" {
         return max;
+    } else {
+        panic!("{:?} cannot be parsed!", obj.name());
+    }
+}
+fn parse_field<T>(obj: &FileObject, max: T, field: &str) -> T
+where
+    T: FromStr, {
+    if let Some(val) = obj.get(field) {
+        return parse(val, max);
     } else {
         panic!("{:?} cannot be parsed!", obj.name());
     }

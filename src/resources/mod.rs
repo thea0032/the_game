@@ -1,7 +1,7 @@
 pub mod constants;
 pub mod dict;
 
-use std::{cmp, fmt::Display};
+use std::{cmp, collections::HashMap, fmt::Display};
 
 use cmp::Ordering;
 
@@ -267,7 +267,7 @@ impl Resources {
     } //Basic functions; self-explanatory
 }
 
-#[derive(Clone, Debug, Copy)]
+#[derive(Clone, Debug, Copy, PartialEq, Eq, Hash)]
 pub struct ResourceID {
     id: usize,
 } //Resource identification wrapper; to make code cleaner
@@ -283,6 +283,10 @@ impl ResourceID {
 pub struct ResourceDict {
     names: Vec<String>,
     transfer_costs: Vec<u64>,
+    growth: HashMap<ResourceID, f64>,
+    requirements: HashMap<ResourceID, HashMap<ResourceID, f64>>,
+    transfer_resource: Option<ResourceID>,
+    //Growth:
 } //Resource dictionary; contains helpful information
 pub fn display_vec_one(rss: &ResourceDict, amts: &Vec<u64>, sep: &str) -> String {
     let mut res = "".to_string(); //Initializes result

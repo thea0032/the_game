@@ -39,20 +39,18 @@ Resources
         Move Cost:MAX
     Factory Jobs
         Move Cost:MAX
-Modification
+ResourceMod
     Population
         Requires
             Air:1
             Water:1
             Food:1
-        Produces
-            Production:1
-        Growth:1.1
+            Production:-1
+        Growth:0.1
     Biomass
         Requires
             Water:0.1
-        Produces
-            Air:0.1
-        Growth:1.1
+            Air:-0.1
+        Growth:0.1
     Transfer
-        Istransfer
+        IsTransfer

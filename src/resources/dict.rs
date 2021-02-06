@@ -1,9 +1,15 @@
 use super::*;
 impl ResourceDict {
-    pub fn new(vals: Vec<String>, t_costs: Vec<u64>) -> ResourceDict {
+    pub fn new(
+        vals: Vec<String>, t_costs: Vec<u64>, growth: HashMap<ResourceID, f64>, requirements: HashMap<ResourceID, HashMap<ResourceID, f64>>,
+        transfer: Option<ResourceID>,
+    ) -> ResourceDict {
         ResourceDict {
             names: vals,
             transfer_costs: t_costs,
+            growth,
+            requirements,
+            transfer_resource: transfer,
         }
     } //Basic new function
     pub fn display_filtered_addon<T>(&self, filter: &Vec<bool>, extra_text: &Vec<T>) -> String
@@ -28,7 +34,7 @@ impl ResourceDict {
     pub fn get_transfer_costs(&self) -> &Vec<u64> {
         &self.transfer_costs
     } //Returns all of the transfer costs
-    pub fn find(&self, name:&str) -> Option<ResourceID>{
+    pub fn find(&self, name: &str) -> Option<ResourceID> {
         Some(ResourceID::new(self.names.iter().position(|x| x == name)?))
     }
 }

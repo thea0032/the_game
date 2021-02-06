@@ -1,9 +1,9 @@
-use crate::resources::constants;
+use crate::resources::{constants, ResourceDict};
 use crate::ui::rand;
 use crate::{object::Object, resources::ResourceID};
 const MAX_GROWTH: f64 = 0.10;
 impl Object {
-    pub fn tick(&mut self) {
+    pub fn tick(&mut self, rss: &ResourceDict) {
         self.past = self.resources.clone(); //"backs up" the current resource amount
         self.resources.tick(); //does a tick of the resources
 

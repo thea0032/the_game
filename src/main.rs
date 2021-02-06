@@ -2,6 +2,7 @@
 
 use component::Components;
 use file::{FileObject, FilePresets};
+use init::sys_new;
 use instr::Directions;
 use systems::Systems;
 use ui::config::Config;
@@ -24,7 +25,7 @@ pub fn main() {
     let rss = init::rss(&file_res);
     let mut cmp: Components = init::cmp(&rss, &file_res);
     let mut dir: Directions = init::dir();
-    let mut sys: Systems = init::sys(&rss, &mut cmp, &mut dir);
+    let mut sys: Systems = init::sys_new(&rss, &mut cmp, &mut dir, &file_res);
     let mut cfg: Config = init::config(presets);
     ui::menu(&rss, &mut cmp, &mut sys, &mut dir, &mut cfg);
 }

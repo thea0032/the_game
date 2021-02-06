@@ -2,7 +2,7 @@ use crate::{instr::Directions, systems::*};
 impl Systems {
     pub fn tick(&mut self, rss: &ResourceDict, cmp: &Components, dir: &mut Directions) {
         for obj in &mut self.objects {
-            obj.tick();
+            obj.tick(rss);
         } //All objects advance a tick
         for sys in &mut self.systems {
             sys.tick();
