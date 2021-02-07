@@ -1,14 +1,10 @@
 use crate::{component::Components, resources::ResourceDict};
 
-use super::{
-    ansi,
-    config::Config,
-    from_str::{InBounds, MenuRes},
-    io::{get_from_input_valid, wait_for_input},
-};
+use super::{ansi, clipboard::Clipboard, component::{detail, details}, config::Config, context::INFO, from_str::{InBounds, MenuRes}, io::{get_from_input_valid, wait_for_input}, recipe::{r_detail, r_details}};
 
 pub fn information(rss: &ResourceDict, cmp: &mut Components, cfg: &mut Config) {
     loop {
+        println!("{}", cfg.display(INFO));
         println!("What do you want to get information on?");
         println!("0. Recipes");
         println!("1. A specific recipe");
@@ -18,15 +14,17 @@ pub fn information(rss: &ResourceDict, cmp: &mut Components, cfg: &mut Config) {
         let input = get_from_input_valid("", "Please enter a valid input", cfg, |x: &MenuRes| x.in_bounds(&len));
         match input {
             MenuRes::Enter(0) => {
-                super::recipe::r_details(rss, cmp, cfg);
+                r_details(rss, cmp, cfg);
             }
             MenuRes::Enter(1) => {
-                super::recipe::r_detail(rss, cmp, cfg);
+                r_detail(rss, cmp, cfg);
             }
             MenuRes::Enter(2) => {
-                super::component::details(rss, cmp, cfg);
+                details(rss, cmp, cfg);
             }
-            MenuRes::Enter(3) => {}
+            MenuRes::Enter(3) => {
+                detail(rss, cmp, cfg)
+            }
             MenuRes::Exit => break,
             MenuRes::Del => break,
             _ => {
@@ -34,4 +32,9 @@ pub fn information(rss: &ResourceDict, cmp: &mut Components, cfg: &mut Config) {
             }
         }
     }
+}
+
+pub fn info_context(ctx: &mut Vec<String>, dis: &mut Vec<bool>, cfg: &Config) {
+    cfg.update_context_all(dis);
+    cfg.update_context(Config::QUIT, Some("exit".to_string()), ctx, dis);
 }

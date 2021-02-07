@@ -54,6 +54,7 @@ impl Instr {
     //Context required: The object that is performing the instructions, the
     // position in the queue we're in, the system dictionary, the resource
     // dictionary, the component dictionary.
+    //TODO: Fix the execution problem w/ flags
     pub fn exe(&self, obj: ObjectID, pos: usize, sys: &mut Systems, rss: &ResourceDict, cmp: &Components) -> InstrRes {
         match self {
             Instr::Move(val) => {
@@ -63,12 +64,12 @@ impl Instr {
                     return InstrRes::Success(pos + 1); //We've succeeded! onto
                                                        // the next thing!
                 }
-                let movement: f64 = sys.get_o(obj).resources().get_curr(crate::resources::constants::MOVEMENT) as f64; //Amount of movement generated
-                let mass: f64 = sys.get_o(obj).resources().get_curr(crate::resources::constants::MASS) as f64; //Mass of the object
+                let movement: f64 = sys.get_o(obj).resources().get_curr(rss.find("Movement").unwrap()) as f64; //Amount of movement generated
+                let mass: f64 = sys.get_o(obj).resources().get_curr(rss.find("Mass").unwrap()) as f64; //Mass of the object
                 let distance = movement / mass; //Distance travelled (this is an Aristotelian universe, where force = mass *
                                                 // velocity)
                 sys.get_o(obj).get_location().move_towards(*val, distance); //Moves towards the location
-                sys.get_o(obj).resources_mut().change_amt(crate::resources::constants::MOVEMENT, 0); //Resets the movement generated to zero
+                sys.get_o(obj).resources_mut().change_amt(rss.find("Movement").unwrap(), 0); //Resets the movement generated to zero
                 if (*sys.get_o(obj).get_location()).eq(val) {
                     //If we got there...
                     return InstrRes::Success(pos + 1); //We've succeeded! Onto
@@ -168,7 +169,9 @@ impl Instr {
                 let mut temp = rss.get_transfer_costs().iter(); //Generates transfer cost.
                 let transfer_cap_cost: u64 = val1.iter().map(|x| x * temp.next().unwrap()).sum(); //Sums transfer costs up.
                 let mut total_cost = val1.clone(); //Generates a clone, that we can manipulate.
-                total_cost[crate::resources::constants::TRANSFER.get()] += transfer_cap_cost; //Adds the cost of transferring resources on.
+                if let Some(val) = rss.get_transfer(){
+                    total_cost[val.get()] += transfer_cap_cost; //Adds the cost of transferring resources on.
+                }
                 if !sys.get_o(obj).resources_mut().spend_unsigned(&total_cost) {
                     //Attempts to spend the resources. If it fails...
                     return InstrRes::Fail("Not enough resources!".to_string()); //fail!
@@ -189,7 +192,9 @@ impl Instr {
                 let mut temp = rss.get_transfer_costs().iter(); //Generates transfer cost.
                 let transfer_cap_cost: u64 = val1.iter().map(|x| x * temp.next().unwrap()).sum(); //Sums transfer costs up.
                 let mut total_cost = val1.clone(); //Generates a clone, that we can manipulate.
-                total_cost[crate::resources::constants::TRANSFER.get()] += transfer_cap_cost; //Adds the cost of transferring resources on.
+                if let Some(val) = rss.get_transfer(){
+                    total_cost[val.get()] += transfer_cap_cost; //Adds the cost of transferring resources on.
+                }
                 if !sys.get_o(*val2).resources_mut().spend_unsigned(&total_cost) {
                     //Attempts to spend the resources. If it fails...
                     return InstrRes::Fail("Not enough resources!".to_string()); //fail!

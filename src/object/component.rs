@@ -1,4 +1,6 @@
-use crate::component::ComponentID;
+use std::io::stdin;
+
+use crate::{component::ComponentID, resources::ResourceDict};
 use crate::component::Components;
 use crate::{component::RecipeID, object::Object, resources::ResourceID, ui::ansi};
 
@@ -47,7 +49,8 @@ impl Object {
         }
         amt
     }
-    pub fn force_install_components(&mut self, id: ComponentID, cmp: &Components, amt: u64) {
+    pub fn force_install_components(&mut self, id: ComponentID, cmp: &Components, amt: u64, rss:&ResourceDict) {
+        self.past = self.resources.clone(); //"backs up" the current resource amount
         let component = cmp.get(id); //Gets component
         self.resources.force_spend(&component.cost().iter().map(|x| x * (amt as i64)).collect()); //Forcefully spends all required resources at once
         self.resources

@@ -1,7 +1,7 @@
 
 use std::{collections::HashMap, str::FromStr};
 
-use crate::ui::config::Config;
+use crate::{component::recipe::Recipe, ui::config::Config};
 use crate::{
     component::{Component, Components},
     file::{read_folder, FileObject, FilePresets},
@@ -45,14 +45,14 @@ pub fn init_object(file: &FileObject, obj: &mut Object, cmp: &Components, rss: &
             for (name, line) in val.grab_contents() {
                 let component = cmp.get_from_name(name);
                 let amt = parse(line, usize::MAX);
-                obj.force_install_components(component, cmp, amt as u64);
+                obj.force_install_components(component, cmp, amt as u64, rss);
             }
         }
         if let Some(val) = val.get(HIDDEN) {
             for (name, line) in val.grab_contents() {
                 let component = cmp.get_from_name_h(name);
                 let amt = parse(line, u64::MAX);
-                obj.force_install_components(component, cmp, amt);
+                obj.force_install_components(component, cmp, amt, rss);
             }
         }
     }
@@ -127,7 +127,7 @@ pub fn rss_mod(
             let mut intermediate:HashMap<ResourceID, f64> = HashMap::new();
             for (name, new) in val.grab_contents() {
                 if let Some(resource) = names.iter().position(|x| x == name) {
-                    intermediate.insert(idpos, parse(new, f64::MAX));
+                    intermediate.insert(ResourceID::new(resource), parse(new, f64::MAX));
                 } else {
                     panic!("{:?} is not inside the resource dictionary!", name);
                 }
@@ -137,7 +137,7 @@ pub fn rss_mod(
         if let Some(val) = line.get(GROWTH){
             res1.insert(idpos, parse(val, f64::MAX));
         }
-        if let Some(val) = line.get(TRANSFER){
+        if let Some(_) = line.get(TRANSFER){
             if res3.is_none(){
                 res3 = Some(idpos);
             } else {
@@ -150,12 +150,15 @@ pub fn rss_mod(
 const COMPONENTS: &str = "Components";
 const ACCESSIBLE: &str = "Accessible";
 const HIDDEN: &str = "Hidden";
+const RECIPE: &str = "Recipes";
 pub fn cmp(rss: &ResourceDict, file: &FileObject) -> Components {
     let mut cmp = Components::new();
     let mut names: Vec<String> = Vec::new();
     let mut h_names: Vec<String> = Vec::new();
     let mut components: Vec<Component> = Vec::new();
     let mut h_components: Vec<Component> = Vec::new();
+    let mut r_names: Vec<String> = Vec::new();
+    let mut recipes: Vec<Recipe> = Vec::new();
     if let Some(val) = file.get(COMPONENTS) {
         if let Some(val) = val.get(ACCESSIBLE) {
             for (name, val) in val.grab_contents() {
@@ -170,9 +173,23 @@ pub fn cmp(rss: &ResourceDict, file: &FileObject) -> Components {
             }
         }
     }
+    if let Some(val) = file.get(RECIPE) {
+        for (name, val) in val.grab_contents(){
+            r_names.push(name.clone());
+            let mut recipe = Recipe::new(rss.len());
+            for (name, val) in val.grab_contents(){
+                let resource = rss.find(name).expect(&format!("Couldn't find {} in resources!", name));
+                let amt = parse(val, i64::MAX);
+                recipe.cost()[resource.get()] = amt;
+            }
+            recipes.push(recipe);
+        }
+    } else {
+        panic!("No recipes object found!");
+    }
     cmp.add_l(names, components);
     cmp.add_h_l(h_names, h_components);
-    cmp.init(rss);
+    cmp.add_r_l(r_names, recipes);
     cmp
 }
 pub const COST: &str = "Cost";
@@ -215,10 +232,11 @@ pub fn generate_component(file: &FileObject, rss: &ResourceDict) -> Component {
 fn parse<T>(obj: &FileObject, max: T) -> T
 where
     T: FromStr, {
-    if let Ok(val) = obj.name().parse::<T>() {
-        return val;
+    let val = obj.name().trim();
+    if let Ok(val) = val.parse::<T>() {
+        val
     } else if obj.name() == "MAX" {
-        return max;
+        max
     } else {
         panic!("{:?} cannot be parsed!", obj.name());
     }
@@ -227,7 +245,7 @@ fn parse_field<T>(obj: &FileObject, max: T, field: &str) -> T
 where
     T: FromStr, {
     if let Some(val) = obj.get(field) {
-        return parse(val, max);
+        parse(val, max)
     } else {
         panic!("{:?} cannot be parsed!", obj.name());
     }
@@ -244,8 +262,8 @@ pub fn load(presets: FilePresets, paths: Vec<&str>) -> FileObject {
         let v = read_folder(&presets, line); //Reads the folder
         for line in v {
             //For every file in the folder...
-            res.merge(FileObject::read_from(line, String::new())); //Merges the contents
+            res.merge(FileObject::read_from(line, String::new(), 0)); //Merges the contents
         }
     }
-    return res;
+    res
 }

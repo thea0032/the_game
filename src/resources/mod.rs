@@ -1,4 +1,3 @@
-pub mod constants;
 pub mod dict;
 
 use std::{cmp, collections::HashMap, fmt::Display};
@@ -216,7 +215,7 @@ impl Resources {
         let mut flag: bool = false; //A flag for if resources exist in this place
         x.push_str(msg); //Adds the inputted message onto the result.
         for (i, item) in a.iter().enumerate() {
-            if *item != zero && *item != max {
+            if *item != zero && *item != max || (prev[i] != zero && prev[i] != max){
                 //If this resource should be displayed...
                 flag = true; //We've displayed at least one resource
                 let diff = item - prev[i]; //Calculates difference

@@ -18,7 +18,7 @@ pub fn select_recipes(cmp: &Components, obj: &Object, cfg: &mut Config) -> Optio
     let id = select_recipe(cmp, obj, cfg)?;
     let amt: usize = get_from_input_valid(
         "Enter the amount of times you want to perform the recipe: ",
-        "please enter a valid id",
+        "please enter a valid option (try q)",
         cfg,
         |x| x <= &amts[id.id()],
     ); //Gets amount
@@ -29,7 +29,7 @@ pub fn select_recipe(cmp: &Components, obj: &Object, cfg: &mut Config) -> Option
     let filter: Vec<bool> = amts.iter().map(|x| x != &0).collect(); //Whether it's actually an option
     let len = filter.iter().filter(|x| **x).count(); //Amount of options
     generic_select(
-        &cmp.display_r(),
+        &cmp.display_contained_r(&amts),
         len,
         |x| Some(RecipeID::new(extra_bits::filter(x, &filter))),
         cfg,
@@ -63,7 +63,7 @@ pub fn r_detail(rss: &ResourceDict, cmp: &mut Components, cfg: &mut Config) {
     if let Some(val) = temp {
         cmp.display_one_r(rss, val);
         if let MenuRes::Copy(v) =
-            get_from_input::<MenuRes>("Press enter to continue (you can also copy): ", "Please enter a valid input! Try q.", cfg)
+            get_from_input::<MenuRes>("Press q to continue (you can also copy): ", "Please enter a valid input! Try q.", cfg)
         {
             *(cfg.clipboard(v)) = Clipboard::Recipe(val)
         }

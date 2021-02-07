@@ -73,7 +73,7 @@ pub fn paste_object(
             println!("Template installed!");
         } else {
             println!("Trying to install from other origin...");
-            if t.grab(source, val, sys) {
+            if t.grab(source, val, sys, rss) {
                 println!("Successfully installed template!");
             } else {
                 println!("Failed to install template!");

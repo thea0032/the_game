@@ -1,9 +1,9 @@
 use rand::{self, random}; //Random stuff
-pub fn rand_round(input: f64) -> u64 {
+pub fn rand_round<T, P>(input: f64, mut cvt:P) -> T where T:Copy, P:FnMut(f64) -> T{
     if input % 1.0 < random() {
-        input.floor() as u64
+        cvt(input.floor())
     } else {
-        input.ceil() as u64
+        cvt(input.ceil())
     }
 } //Rounds stuff randomly: eg
   //11.15 has a 15% chance of being 12 and an 85% chance of being 11

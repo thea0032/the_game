@@ -1,12 +1,10 @@
-use std::{
-    fs::File,
-    io::{stdin, stdout, Write},
-    str::FromStr,
-};
+use std::{fmt, fs::File, io::{stdin, stdout, Write}, str::FromStr};
+
+use fmt::Debug;
 
 use crate::{extra_bits, file::FilePresets};
 
-use super::clipboard::Clipboard;
+use super::{clipboard::Clipboard, io};
 use super::defaults;
 
 const PATH: &str = "stuff";
@@ -19,7 +17,8 @@ pub struct Config {
     cpb: Clipboard,             //A clipboard
     contexts: Vec<Vec<String>>, //Contexts
     display: Vec<Vec<bool>>,    //Whether these functions are displayed, based on context
-    file_presets: FilePresets,
+    file_presets: FilePresets,  //Presets for files
+    buffer: String,             //A buffer
 } //The configuration structure. Contains a variety of things.
 
 impl Config {
@@ -59,6 +58,7 @@ impl Config {
             contexts: Vec::new(),
             display: Vec::new(),
             file_presets: presets,
+            buffer: String::new(),
         }; //Initializes config
         super::context::init(&mut cfg);
         cfg.keys.push(Key {
@@ -224,6 +224,11 @@ impl Config {
         } else {
             &mut self.cpb
         }
+    }
+    pub fn println(&mut self, args: fmt::Arguments<'_>){
+        let res = std::fmt::format(args);//formats the string
+        println!("{:?}", res);
+        self.buffer.push_str(&res);
     }
 }
 pub struct Key {

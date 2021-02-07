@@ -1,8 +1,9 @@
 #![allow(clippy::ptr_arg)]
 
+use std::io::{Read, stdin};
+
 use component::Components;
 use file::{FileObject, FilePresets};
-use init::sys_new;
 use instr::Directions;
 use systems::Systems;
 use ui::config::Config;
@@ -21,7 +22,7 @@ mod systems;
 mod ui;
 pub fn main() {
     let presets: FilePresets = FilePresets::new("assets\\".to_string());
-    let file_res: FileObject = init::load(presets.clone(), vec!["base", "test"]);
+    let file_res: FileObject = init::load(presets.clone(), vec!["base"]);
     let rss = init::rss(&file_res);
     let mut cmp: Components = init::cmp(&rss, &file_res);
     let mut dir: Directions = init::dir();

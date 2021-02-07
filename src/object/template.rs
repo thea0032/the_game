@@ -1,4 +1,4 @@
-use crate::systems::{object_id::ObjectID, Systems};
+use crate::{resources::ResourceDict, systems::{object_id::ObjectID, Systems}};
 
 #[derive(Clone)]
 pub struct Template {
@@ -28,11 +28,13 @@ impl Template {
             false
         }
     } //Tries to install the template. Returns whether it was successful.
-    pub fn grab(&self, orig: ObjectID, dest: ObjectID, sys: &mut Systems) -> bool {
+    pub fn grab(&self, orig: ObjectID, dest: ObjectID, sys: &mut Systems, rss: &ResourceDict) -> bool {
         match self.transfer_cost {
             Some(val) => {
                 let mut real_cost: Vec<i64> = self.cost().clone();
-                real_cost[crate::resources::constants::TRANSFER.get()] += val as i64;
+                if let Some(id) = rss.get_transfer(){
+                    real_cost[id.get()] += val as i64;
+                }
                 if sys.get_o(orig).resources_mut().spend(&real_cost) {
                     sys.get_o(dest).resources_mut().add_storage_vec(self.storage());
                     sys.get_o(dest).resources_mut().add_surplus_vec(self.surplus());

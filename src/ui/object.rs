@@ -17,6 +17,8 @@ use crate::{
     systems::{object_id::ObjectID, system_id::SystemID},
     ui::io::*,
 };
+
+use super::recipe::perform_recipe;
 pub fn make_object(
     rss: &ResourceDict, cmp: &mut Components, sys: &mut Systems, dir: &mut Directions, system: SystemID, cfg: &mut Config,
 ) -> Option<ObjectID> {
@@ -61,7 +63,7 @@ pub fn object_menu(rss: &ResourceDict, cmp: &mut Components, sys: &mut Systems, 
             MenuRes::Exit => break,                                                             //Break out of menu
             MenuRes::New => add_component(cmp, sys.get_o(obj), cfg),                            //Add component
             MenuRes::Del => remove_component(cmp, sys.get_o(obj), cfg),                         //Remove component
-            MenuRes::Enter(0) => recipe::perform_recipe(cmp, sys.get_o(obj), cfg),              //Perform recipe
+            MenuRes::Enter(0) => perform_recipe(cmp, sys.get_o(obj), cfg),              //Perform recipe
             MenuRes::Enter(1) => transfer(rss, sys, obj, cfg),                                  //Transfer resources
             MenuRes::Enter(2) => instrs::instrs_menu(sys, obj, cmp, rss, dir.instrs(obj), cfg), /* Enter instructions menu */
             MenuRes::Enter(3) => quickie(rss, cmp, sys, dir.quickie(obj), obj, cfg),            /* Enter quick */
@@ -113,18 +115,23 @@ pub fn object_menu_context(ctx: &mut Vec<String>, dis: &mut Vec<bool>, cfg: &Con
 pub fn transfer(rss: &ResourceDict, sys: &mut Systems, obj: ObjectID, cfg: &mut Config) {
     let temp = sys.get_o(obj).resources().get_currs().clone(); //Gets current resources
     let mut max = temp.iter(); //Gets maximum resources
-    let transfer_cap = sys.get_o(obj).resources().get_curr(crate::resources::constants::TRANSFER); //Gets transfer capacity
-    let total_cap: Vec<u64> = resources::get_transfer_max(rss, transfer_cap)
-        .into_iter()
-        .map(|x| {
-            let y = *max.next().unwrap();
-            if y > x {
-                x
-            } else {
-                y
-            }
-        })
-        .collect(); //Gets maximum transferrable
+    let total_cap:Vec<u64>;
+    if let Some(val) = rss.get_transfer(){
+        let transfer_cap = sys.get_o(obj).resources().get_curr(val); //Gets transfer capacity
+        total_cap = resources::get_transfer_max(rss, transfer_cap)
+            .into_iter()
+            .map(|x| {
+                let y = *max.next().unwrap();
+                if y > x {
+                    x
+                } else {
+                    y
+                }
+            })
+            .collect(); //Gets maximum transferrable
+    } else {
+        total_cap = temp;//No transfer resource
+    }
     let temp = get_resource_filtered(rss, &total_cap, cfg); //Gets the resource to transfer
     let resource;
     if let Some(val) = temp {
@@ -153,15 +160,17 @@ pub fn transfer(rss: &ResourceDict, sys: &mut Systems, obj: ObjectID, cfg: &mut 
         wait_for_input("Press enter to continue:", cfg);
         return;
     }
-    if !sys
-        .get_o(obj)
-        .resources_mut()
-        .rmv_res(crate::resources::constants::TRANSFER, amt * rss.get_transfer_costs()[resource.get()])
-    {
-        sys.get_o(obj).resources_mut().add_res(resource, amt); //Undoes it
-        println!("The transfer failed somehow!");
-        wait_for_input("Press enter to continue:", cfg);
-        return;
+    if let Some(val) = rss.get_transfer(){
+        if !sys
+            .get_o(obj)
+            .resources_mut()
+            .rmv_res(val, amt * rss.get_transfer_costs()[resource.get()])
+        {
+            sys.get_o(obj).resources_mut().add_res(resource, amt); //Undoes it
+            println!("The transfer failed somehow!");
+            wait_for_input("Press enter to continue:", cfg);
+            return;
+        }
     }
     sys.get_o(other).resources_mut().add_res(resource, amt); //Succeeds; adds the resources to the other object
     println!("{} resources were successfully transferred!", amt); //Helpful message

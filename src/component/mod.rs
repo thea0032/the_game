@@ -1,6 +1,4 @@
-pub mod accessible;
-pub mod init;
-mod recipe;
+pub mod recipe;
 use crate::extra_bits;
 use crate::resources::*;
 
@@ -52,9 +50,6 @@ impl Components {
     pub fn get_r_name(&self, id: RecipeID) -> &String {
         &self.recipe_names[id.id]
     } //gets the recipe name from the list
-    pub fn init(&mut self, rss: &ResourceDict) {
-        self.add_r_l(recipe::get_names(), recipe::get_all(rss));
-    } //initializes the components object from accessible.rs, init.rs, and recipe.rs
     pub fn new() -> Components {
         Components {
             list: Vec::new(),
@@ -119,6 +114,18 @@ impl Components {
         for i in 0..self.recipe_list.len() {
             x.push_str(&format!("{}: {}", i, &self.recipe_names[i]));
             x.push('\n');
+        }
+        x
+    }
+    pub fn display_contained_r(&self, a: &Vec<usize>) -> String {
+        let mut x: String = "".to_string();
+        let mut counter: usize = 0;
+        for (i, item) in a.iter().enumerate() {
+            if *item != 0 {
+                x.push_str(&format!("{}: {} ({})", counter, &self.recipe_names[i], item));
+                x.push_str(", \n");
+                counter += 1;
+            }
         }
         x
     }

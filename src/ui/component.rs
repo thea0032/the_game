@@ -1,7 +1,7 @@
 use crate::{component::*, object::*, resources::*};
 use crate::{extra_bits::filter, ui::io::*};
 
-use super::{clipboard::Clipboard, config::Config, select::generic_select};
+use super::{clipboard::Clipboard, config::Config, from_str::MenuRes, select::generic_select};
 
 pub fn select_components_unfiltered(cmp: &Components, cfg: &mut Config) -> Option<(ComponentID, usize)> {
     let component = select_component_unfiltered(cmp, cfg)?;
@@ -12,6 +12,20 @@ pub fn select_components_unfiltered(cmp: &Components, cfg: &mut Config) -> Optio
     ); //Gets amount of component from input
     Some((component, amt)) //Returns result
 } //Returns a component, and an amount to install from input. None if aborted.
+
+pub fn detail(rss: &ResourceDict, cmp: &mut Components, cfg: &mut Config) {
+    let temp = select_component_unfiltered(cmp, cfg);
+    if let Some(val) = temp {
+        cmp.display_one(rss, val);
+        if let MenuRes::Copy(v) =
+            get_from_input::<MenuRes>("Press q to continue (you can also copy): ", "Please enter a valid input! Try q.", cfg)
+        {
+            *(cfg.clipboard(v)) = Clipboard::Component(val)
+        }
+    } else {
+        println!("Operation aborted!");
+    }
+}
 pub fn select_component_unfiltered(cmp: &Components, cfg: &mut Config) -> Option<ComponentID> {
     generic_select(
         &cmp.display(),

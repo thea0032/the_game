@@ -25,11 +25,10 @@ Components
         Solar Panels
             Cost
                 Metal:1000
-            Surplus
-                Energy:10
-                Space:0
                 Mass:-6
                 Production:5
+            Surplus
+                Energy:10
         Living Quarters
             Cost
                 Metal:500

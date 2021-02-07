@@ -19,6 +19,8 @@ Systems
                 Resources
                     Population:5
                     Food:5
+                    Water:5
+                    Air:5
                 Location
                     x:0
                     y:0
