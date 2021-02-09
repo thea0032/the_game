@@ -23,7 +23,7 @@ pub fn get_str_unparsed(msg: &str, cfg: &mut Config) -> String {
     }
     if let Some(val) = &cfg.write_to_stat() {
         //If we're recording...
-        crate::file::write(val, s.clone(), cfg.presets());
+        crate::file::write(val, s.clone());
     }
     refresh(); //Refreshes stuff
     s //Returns the string

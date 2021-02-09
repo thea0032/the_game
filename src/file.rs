@@ -113,22 +113,18 @@ where
     }
 }
 pub fn ensure_file_exists(path: &str, presets: &FilePresets) {
-    if File::open(path).is_err() {
+    let path = presets.asset_path.clone() + path;
+    if File::open(&path).is_err() {
         File::create(path).unwrap();
     }
 }
-pub fn write<T>(file: &File, contents: T, presets: &FilePresets)
+pub fn write<T>(file: &File, contents: T)
 where
     T: ToString, {
+    
     let mut f = BufWriter::new(file);
     f.write_all(contents.to_string().as_bytes()).expect("Unable to write data");
     f.flush().unwrap();
-}
-pub fn flush(file: &str, presets: &FilePresets) -> File {
-    File::create(file).unwrap()
-}
-pub fn cp(orig: &str, new: &str, presets: &FilePresets) {
-    fs::copy(orig, new).expect("Couldn't copy files for some reason");
 }
 pub fn read_folder(presets: &FilePresets, name: &str) -> Vec<Vec<String>> {
     let mut combination: String = "".to_string();

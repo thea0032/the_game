@@ -1,22 +1,12 @@
-
-use std::io::stdin;
-
 use crate::resources::{ResourceDict};
 use crate::ui::rand;
 use crate::{object::Object};
-const MAX_GROWTH: f64 = 0.10;
 impl Object {
     pub fn tick(&mut self, rss: &ResourceDict) {
-        println!("Population: {}", self.resources().get_curr(rss.find("Population").unwrap()));
         self.past = self.resources.clone(); //"backs up" the current resource amount
-        println!("Population: {}", self.resources().get_curr(rss.find("Population").unwrap()));
         self.resources.tick(); //does a tick of the resources
-        println!("Population: {}", self.resources().get_curr(rss.find("Population").unwrap()));
         self.grow(rss); //Growth
-        println!("Population: {}", self.resources().get_curr(rss.find("Population").unwrap()));
         self.upkeep(rss); //Upkeep
-        println!("Population: {}", self.resources().get_curr(rss.find("Population").unwrap()));
-        stdin().read_line(&mut String::new());
     }
     pub fn grow(&mut self, rss:& ResourceDict) {
         for (id, amt) in rss.get_growth(){

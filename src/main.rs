@@ -1,7 +1,5 @@
 #![allow(clippy::ptr_arg)]
 
-use std::io::{Read, stdin};
-
 use component::Components;
 use file::{FileObject, FilePresets};
 use instr::Directions;

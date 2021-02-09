@@ -36,13 +36,6 @@ pub fn make_object(
         None
     }
 } //Makes an object
-pub fn new_at(
-    rss: &ResourceDict, cmp: &mut Components, sys: &mut Systems, system: SystemID, cfg: &mut Config, dir: &mut Directions, from: ObjectID,
-) -> ObjectID {
-    let name: String = get_str("What do you want to call your new object?", cfg); //Gets the object's name from input
-    let loc = *sys.get_o(from).get_location_stat();
-    sys.add_o(rss, cmp, dir, name, loc, system)
-}
 pub fn object_menu(rss: &ResourceDict, cmp: &mut Components, sys: &mut Systems, obj: ObjectID, dir: &mut Directions, cfg: &mut Config) {
     loop {
         println!("Displaying...");

@@ -1,6 +1,6 @@
 use crate::{component::Components, resources::ResourceDict};
 
-use super::{ansi, clipboard::Clipboard, component::{detail, details}, config::Config, context::INFO, from_str::{InBounds, MenuRes}, io::{get_from_input_valid, wait_for_input}, recipe::{r_detail, r_details}};
+use super::{ansi, component::{detail, details}, config::Config, context::INFO, from_str::{InBounds, MenuRes}, io::{get_from_input_valid, wait_for_input}, recipe::{r_detail, r_details}};
 
 pub fn information(rss: &ResourceDict, cmp: &mut Components, cfg: &mut Config) {
     loop {

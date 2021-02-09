@@ -45,14 +45,14 @@ pub fn init_object(file: &FileObject, obj: &mut Object, cmp: &Components, rss: &
             for (name, line) in val.grab_contents() {
                 let component = cmp.get_from_name(name);
                 let amt = parse(line, usize::MAX);
-                obj.force_install_components(component, cmp, amt as u64, rss);
+                obj.force_install_components(component, cmp, amt as u64);
             }
         }
         if let Some(val) = val.get(HIDDEN) {
             for (name, line) in val.grab_contents() {
                 let component = cmp.get_from_name_h(name);
                 let amt = parse(line, u64::MAX);
-                obj.force_install_components(component, cmp, amt, rss);
+                obj.force_install_components(component, cmp, amt);
             }
         }
     }

@@ -1,5 +1,6 @@
 #[allow(dead_code)]
 pub mod ansi;
+#[allow(dead_code)]
 mod clipboard;
 mod component;
 mod condition;

@@ -499,9 +499,6 @@ impl Quickie {
     pub fn get_dirs(&self) -> &Vec<Instr> {
         &self.dirs
     }
-    pub fn get_res(&self) -> &Vec<InstrRes> {
-        &self.res
-    }
     pub fn get_del(&self) -> &Vec<bool> {
         &self.del
     }
