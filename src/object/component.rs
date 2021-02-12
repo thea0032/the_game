@@ -29,6 +29,11 @@ impl Object {
                 .add_storage_vec(&component.storage().iter().map(|x| x * (amt as u64)).collect());
             self.resources
                 .add_surplus_vec(&component.surplus().iter().map(|x| x * (amt as i64)).collect());
+            if id.is_hidden() {
+                self.h_component_amounts[id.id()] += 1;
+            } else {
+                self.component_amounts[id.id()] += 1;
+            }
         }
         amt //We did all of the installations!
     }
@@ -55,6 +60,11 @@ impl Object {
             .add_storage_vec(&component.storage().iter().map(|x| x * (amt as u64)).collect()); //Adds the storage benefits of the component.
         self.resources
             .add_surplus_vec(&component.surplus().iter().map(|x| x * (amt as i64)).collect()); //Adds the surplus benefits of the component.
+        if id.is_hidden() {
+            self.h_component_amounts[id.id()] += 1;
+        } else {
+            self.component_amounts[id.id()] += 1;
+        }
     }
     pub fn remove_components(&mut self, id: ComponentID, cmp: &mut Components, amt: usize) -> usize {
         for i in 0..amt {
@@ -68,10 +78,15 @@ impl Object {
                 return i; //Can't re-spend gains
             } //Spends the required stuff; if it can't, returns the amount already installed.
               //Otherwise...
-            self.component_amounts[id.id()] -= 1;
+            if id.is_hidden() {
+                self.h_component_amounts[id.id()] -= 1;
+            } else {
+                self.component_amounts[id.id()] -= 1;
+            }
             self.resources.rmv_storage_vec(component.storage());
             self.resources.rmv_surplus_vec(component.surplus());
         }
+        
         amt
     }
     pub fn name(&self) -> &str {
