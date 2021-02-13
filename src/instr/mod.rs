@@ -536,10 +536,10 @@ impl Quickie {
         self.res.insert(index, InstrRes::Continue);
         self.del.insert(index, del);
     } //Adds a new function
-    pub fn display(&self, amt_before: usize, obj: ObjectID, sys: &Systems, rss: &ResourceDict, cmp: &Components) -> String {
+    pub fn display(&self, obj: ObjectID, sys: &Systems, rss: &ResourceDict, cmp: &Components) -> String {
         let mut res: String = "".to_string(); //Initializes result
         for (i, line) in self.dirs.iter().enumerate() {
-            res.push_str(&format!("{}{}. {}", self.color(i), i + amt_before, line.display(obj, sys, rss, cmp))); //Adds a few things
+            res.push_str(&format!("{}{}. {}", self.color(i), i, line.display(obj, sys, rss, cmp))); //Adds a few things
             if self.del[i] {
                 //If it's temporary...
                 res.push_str(" (temp)"); //helpful text

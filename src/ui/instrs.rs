@@ -122,9 +122,8 @@ pub fn queue_menu(sys: &mut Systems, obj: ObjectID, cmp: &Components, rss: &Reso
 }
 
 pub fn queue_context(ctx: &mut Vec<String>, dis: &mut Vec<bool>, cfg: &Config) {
+    cfg.update_context_all(dis);
     cfg.update_context(Config::QUIT, Some("exit to object menu".to_string()), ctx, dis);
     cfg.update_context(Config::NEW, Some("create a queue".to_string()), ctx, dis);
     cfg.update_context(Config::DELETE, Some("delete a queue".to_string()), ctx, dis);
-    cfg.update_context(Config::TICK, None, ctx, dis);
-    cfg.update_context(Config::INFO, None, ctx, dis);
 }
