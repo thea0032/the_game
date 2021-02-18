@@ -5,14 +5,21 @@ use crate::{
     systems::{object_id::ObjectID, Systems},
 };
 
-use super::{ansi, config::Config, context::QUICK_MENU, from_str::{InBounds, MenuRes}, instr, io::{get_from_input_valid, wait_for_input}};
+use super::{
+    ansi,
+    config::Config,
+    context::QUICK_MENU,
+    from_str::{InBounds, MenuRes},
+    instr,
+    io::{get_from_input_valid, wait_for_input},
+};
 
 pub fn quickie(rss: &ResourceDict, cmp: &Components, sys: &mut Systems, dir: &mut Quickie, obj: ObjectID, cfg: &mut Config) {
     loop {
         print!("{}", ansi::GREEN);
         println!("{}", cfg.display(QUICK_MENU));
         println!("{}", dir.display(obj, sys, rss, cmp)); //Displays options
-        let input: MenuRes = get_from_input_valid("", "Please enter a valid input", cfg, |x:&MenuRes| x.in_bounds(&dir.len())); //Gets option
+        let input: MenuRes = get_from_input_valid("", "Please enter a valid input", cfg, |x: &MenuRes| x.in_bounds(&dir.len())); //Gets option
         match input {
             MenuRes::Exit => break, //Breaks out of menu
             MenuRes::New => {

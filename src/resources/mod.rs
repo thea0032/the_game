@@ -4,7 +4,12 @@ use std::{cmp, collections::HashMap, fmt::Display};
 
 use cmp::Ordering;
 
-use crate::{extra_bits::fill, ui::ansi};
+use crate::{
+    extra_bits::fill,
+    file::FileObject,
+    save::{save_vec_one, Saveable},
+    ui::ansi,
+};
 #[derive(Clone, Debug)]
 pub struct Resources {
     curr: Vec<u64>,    //The amount of resources here
@@ -215,7 +220,7 @@ impl Resources {
         let mut flag: bool = false; //A flag for if resources exist in this place
         x.push_str(msg); //Adds the inputted message onto the result.
         for (i, item) in a.iter().enumerate() {
-            if *item != zero && *item != max || (prev[i] != zero && prev[i] != max){
+            if *item != zero && *item != max || (prev[i] != zero && prev[i] != max) {
                 //If this resource should be displayed...
                 flag = true; //We've displayed at least one resource
                 let diff = item - prev[i]; //Calculates difference
@@ -304,4 +309,26 @@ pub fn display_vec_one(rss: &ResourceDict, amts: &Vec<u64>, sep: &str) -> String
         }
     }
     res
+}
+const CURR: &str = "current";
+const CAP: &str = "storage";
+const SURPLUS: &str = "surplus";
+impl Saveable for Resources {
+    fn save(&self, name: &str) -> FileObject {
+        let mut names: Vec<String> = Vec::new();
+        let mut contents: Vec<FileObject> = Vec::new();
+        names.push(CURR.to_string());
+        contents.push(save_vec_one(&self.curr, CURR));
+        names.push(CAP.to_string());
+        contents.push(save_vec_one(&self.curr, CAP));
+        names.push(SURPLUS.to_string());
+        contents.push(save_vec_one(&self.curr, SURPLUS));
+        FileObject::assemble(name.to_string(), names, contents)
+    }
+}
+const RESOURCE: &str = "resource";
+impl Saveable for ResourceID {
+    fn save(&self, name: &str) -> FileObject {
+        FileObject::assemble(name.to_string(), vec![RESOURCE.to_string()], vec![FileObject::blank(self.id.to_string())])
+    }
 }

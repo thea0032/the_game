@@ -1,4 +1,3 @@
-
 use crate::resources::*;
 use crate::{component::*, extra_bits};
 use crate::{location::*, systems::system_id::*};

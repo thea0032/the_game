@@ -1,4 +1,4 @@
-use crate::{component::ComponentID};
+use crate::component::ComponentID;
 use crate::component::Components;
 use crate::{component::RecipeID, object::Object, resources::ResourceID, ui::ansi};
 
@@ -86,7 +86,7 @@ impl Object {
             self.resources.rmv_storage_vec(component.storage());
             self.resources.rmv_surplus_vec(component.surplus());
         }
-        
+
         amt
     }
     pub fn name(&self) -> &str {

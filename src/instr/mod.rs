@@ -169,7 +169,7 @@ impl Instr {
                 let mut temp = rss.get_transfer_costs().iter(); //Generates transfer cost.
                 let transfer_cap_cost: u64 = val1.iter().map(|x| x * temp.next().unwrap()).sum(); //Sums transfer costs up.
                 let mut total_cost = val1.clone(); //Generates a clone, that we can manipulate.
-                if let Some(val) = rss.get_transfer(){
+                if let Some(val) = rss.get_transfer() {
                     total_cost[val.get()] += transfer_cap_cost; //Adds the cost of transferring resources on.
                 }
                 if !sys.get_o(obj).resources_mut().spend_unsigned(&total_cost) {
@@ -192,7 +192,7 @@ impl Instr {
                 let mut temp = rss.get_transfer_costs().iter(); //Generates transfer cost.
                 let transfer_cap_cost: u64 = val1.iter().map(|x| x * temp.next().unwrap()).sum(); //Sums transfer costs up.
                 let mut total_cost = val1.clone(); //Generates a clone, that we can manipulate.
-                if let Some(val) = rss.get_transfer(){
+                if let Some(val) = rss.get_transfer() {
                     total_cost[val.get()] += transfer_cap_cost; //Adds the cost of transferring resources on.
                 }
                 if !sys.get_o(*val2).resources_mut().spend_unsigned(&total_cost) {

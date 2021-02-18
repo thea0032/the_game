@@ -4,6 +4,8 @@ use crate::resources::*;
 
 use self::recipe::Recipe;
 #[derive(Clone, Debug)]
+///A gigantic list of components. Contains all visible components, hidden components, and
+/// (only used in initialization), and recipes.
 pub struct Components {
     pub list: Vec<Component>, //list of all accessible components
     pub names: Vec<String>,   //names of all accessible components
@@ -14,13 +16,16 @@ pub struct Components {
     pub recipe_names: Vec<String>, //names of all recipes
 }
 impl Components {
+    ///Gets a component from an ID. Returns the corresponding component.
     pub fn get(&self, id: ComponentID) -> &Component {
         if !id.is_hidden {
             &self.list[id.id]
         } else {
             &self.hidden_list[id.id]
         }
-    } //gets a component from the lists
+    }
+    ///Gets a component's id from the name entered. Searches the visible components.
+    ///Panics if the name wasn't found.
     pub fn get_from_name(&self, name: &str) -> ComponentID {
         for (i, line) in self.names.iter().enumerate() {
             if line == name {
@@ -29,6 +34,8 @@ impl Components {
         }
         panic!("{} was not found!", name);
     }
+    ///Gets a component's id from the name entered. Searches the hidden components.
+    ///Panics if the name wasn't found.
     pub fn get_from_name_h(&self, name: &str) -> ComponentID {
         for (i, line) in self.hidden_names.iter().enumerate() {
             if line == name {
@@ -37,19 +44,23 @@ impl Components {
         }
         panic!("{} was not found!", name);
     }
+    ///Gets a recipe in this object from an ID. Returns the corresponding recipe.
     pub fn get_r(&self, id: RecipeID) -> &Recipe {
         &self.recipe_list[id.id]
-    } //gets a recipe from the list
+    }
+    ///Gets a component's name in this object from the ID entered.
     pub fn get_name(&self, id: ComponentID) -> &String {
         if !id.is_hidden {
             &self.names[id.id]
         } else {
             &self.hidden_names[id.id]
         }
-    } //gets the component name from the lists
+    }
+    ///Gets a recipe's name in this object from the ID entered.
     pub fn get_r_name(&self, id: RecipeID) -> &String {
         &self.recipe_names[id.id]
-    } //gets the recipe name from the list
+    }
+    ///Initializes an empty components object.
     pub fn new() -> Components {
         Components {
             list: Vec::new(),
@@ -59,19 +70,26 @@ impl Components {
             recipe_list: Vec::new(),
             recipe_names: Vec::new(),
         }
-    } //new function
+    }
+    ///Adds a vector of components and a vector of corresponding names to this object.
+    ///All objects are appended to the visible list.
     pub fn add_l(&mut self, mut name: Vec<String>, mut component: Vec<Component>) {
         self.list.append(&mut component);
         self.names.append(&mut name);
-    } //adds a list of components and names to the component dictionary
+    }
+    ///Adds a vector of components and a vector of corresponding names to this object.
+    ///All objects are appended to the hidden list.
     pub fn add_h_l(&mut self, mut name: Vec<String>, mut component: Vec<Component>) {
         self.hidden_list.append(&mut component);
         self.hidden_names.append(&mut name);
-    } //add_l but in the hidden category
+    }
+
+    ///Adds a vector of recipes and a vector of corresponding names to this object.
     pub fn add_r_l(&mut self, mut name: Vec<String>, mut recipe: Vec<Recipe>) {
         self.recipe_list.append(&mut recipe);
         self.recipe_names.append(&mut name);
-    } //adds a list of recipes and names to the component dictionary
+    }
+    ///Returns a numbered list of the visible components inside this object.
     pub fn display(&self) -> String {
         let mut x: String = "".to_string();
         for i in 0..self.list.len() {
@@ -79,7 +97,22 @@ impl Components {
             x.push('\n'); //separates them by line
         }
         x
-    } //displays the accessible components
+    }
+    /// Returns a numbered list of visible components inside this object.
+    /// The list is filtered based on the "contents" of a.
+    /// A should be the same size as the components vector. If a is too sort,
+    /// the function will end early. If a is too long, there will be a panic.
+    /// # Example
+    /// ```
+    /// Components object = Components::new();
+    /// object.add_l(vec!["a".to_string(), "b".to_string(), "c".to_string()], vec![]);//Do not do this.
+    /// object.display_contained(vec![0, 1, 3])
+    /// /*
+    /// prints:
+    /// 0: b (1)
+    /// 1: c(3)
+    /// */
+    /// ```
     pub fn display_contained(&self, a: &Vec<usize>) -> String {
         let mut x: String = "".to_string();
         let mut counter: usize = 0;
@@ -91,8 +124,33 @@ impl Components {
             }
         }
         x
-    } //displays the accessible components, but filters them based on how many of
-      // them there are
+    }
+    /// Returns a numbered list of visible components inside this object.
+    /// The list includes information on the components - their costs, and what
+    /// resources they give.
+    /// # Example
+    /// ```
+    /// let mut rss:ResourceDict = ResourceDict::new(vec!["A".to_string(), "B".to_string(), "C".to_string()], vec![0; 3], HashMap::new(), HashMap::new(), None);
+    /// // Note: This creates 3 basic resources called A, B, and C, that cost nothing to transfer. Ignore the latter 3.
+    /// let mut object:Components = Components::new();
+    /// let mut a:Component = Component::new();
+    /// a.change_cost(rss.find("A").unwrap(), 50); //a costs 50 A's.
+    /// a.change_cost(rss.find("B").unwrap(), -50); //Installing a gives 50 B's.
+    /// a.change_surplus(rss.find("C").unwrap(), 10); // a gives 10 C's every turn.
+    /// let mut b:Component = Component::new();
+    /// b.change_surplus(rss.find("A").unwrap(), 1); // b gives an A every turn.
+    /// object.add_l(vec!["a".to_string(), "b".to_string()], vec![a, b]);
+    /// object.display_detailed(&rss);
+    /// /*
+    /// Prints:
+    /// 0: a
+    ///   cost: 50 a, 50 b
+    ///   surplus: 10 c
+    ///   <There is no storage line.>
+    /// 1: b
+    ///   surplus: 1 a
+    /// */
+    /// ```
     pub fn display_detailed(&self, rss: &ResourceDict) -> String {
         let mut x: String = "".to_string();
         for i in 0..self.list.len() {
@@ -146,13 +204,16 @@ impl Components {
         x.push_str(&self.recipe_list[i.id].display(rss));
         x
     }
+    /// Gets the amount of visible components inside this object.
     pub fn len(&self) -> usize {
         self.list.len()
     }
+    ///Gets the amount of recipes inside the object.
     pub fn len_r(&self) -> usize {
         self.recipe_list.len()
     }
 }
+///The components structure is mostly made out of this structure.
 #[derive(Clone, Debug)]
 pub struct Component {
     surplus: Vec<i64>,

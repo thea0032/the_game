@@ -1,4 +1,4 @@
-use io::{BufReader};
+use io::BufReader;
 use std::{fs, iter::Zip, slice::Iter};
 use std::{
     fs::File,
@@ -11,10 +11,39 @@ pub struct FileObject {
     contents: Vec<FileObject>,
     names: Vec<String>,
 }
+
+impl FileObject {
+    pub fn as_string_core(&self, tabs: usize) -> String {
+        let mut result: String = String::new();
+        for (i, line) in self.grab_contents() {
+            for _ in 0..=tabs {
+                result.push_str("    ");
+            }
+            if i != &line.name {
+                result.push_str(i);
+                result.push(':');
+            }
+            result.push_str(&line.name);
+            result.push('\n');
+            result.push_str(&line.as_string_core(tabs + 1));
+        }
+        return result;
+    }
+    pub fn as_string(&self) -> String {
+        let mut result: String = "".to_string();
+        result.push_str(&self.name);
+        result.push('\n');
+        result.push_str(&self.as_string_core(0));
+        return result;
+    }
+}
 const WHITESPACE: &str = "    ";
 const WHITESPACE_LEN: usize = 4;
 impl FileObject {
-    pub fn read_from(file: Vec<String>, name: String, tabs:usize) -> FileObject {
+    pub fn assemble(name: String, names: Vec<String>, contents: Vec<FileObject>) -> FileObject {
+        FileObject { name, names, contents }
+    }
+    pub fn read_from(file: Vec<String>, name: String, tabs: usize) -> FileObject {
         let mut contents: Vec<FileObject> = Vec::new();
         let mut names: Vec<String> = Vec::new();
         let mut buffer: Vec<String> = Vec::new();
@@ -121,7 +150,6 @@ pub fn ensure_file_exists(path: &str, presets: &FilePresets) {
 pub fn write<T>(file: &File, contents: T)
 where
     T: ToString, {
-    
     let mut f = BufWriter::new(file);
     f.write_all(contents.to_string().as_bytes()).expect("Unable to write data");
     f.flush().unwrap();

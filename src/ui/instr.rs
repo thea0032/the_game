@@ -6,7 +6,22 @@ use crate::{
     systems::{object_id::ObjectID, Systems},
 };
 
-use super::{ansi, clipboard::Clipboard, component::{select_component_unfiltered, select_components_unfiltered}, condition::make_condition, config::Config, context, from_str::{InBounds, MenuRes}, io::{get_from_input, get_from_input_valid, get_str, wait_for_input}, location::get_location, object::get_object, recipe::{select_recipe_unfiltered, select_recipes_unfiltered}, resources::get_rss, select::{generic_select, generic_select_simple}, system::get_system};
+use super::{
+    ansi,
+    clipboard::Clipboard,
+    component::{select_component_unfiltered, select_components_unfiltered},
+    condition::make_condition,
+    config::Config,
+    context,
+    from_str::{InBounds, MenuRes},
+    io::{get_from_input, get_from_input_valid, get_str, wait_for_input},
+    location::get_location,
+    object::get_object,
+    recipe::{select_recipe_unfiltered, select_recipes_unfiltered},
+    resources::get_rss,
+    select::{generic_select, generic_select_simple},
+    system::get_system,
+};
 
 pub fn make_queue(sys: &mut Systems, obj: ObjectID, cmp: &Components, rss: &ResourceDict, instrs: &mut Instrs, cfg: &mut Config) {
     let is_kept: bool = get_from_input(
@@ -28,7 +43,7 @@ pub fn make_queue(sys: &mut Systems, obj: ObjectID, cmp: &Components, rss: &Reso
     }
 }
 pub fn make_instr(rss: &ResourceDict, cmp: &Components, sys: &mut Systems, obj: ObjectID, queue_len: usize, cfg: &mut Config) -> Option<Instr> {
-    let mut display:String = String::new();
+    let mut display: String = String::new();
     display.push_str("Enter the type of instruction: \n");
     display.push_str(ansi::GREEN);
     display.push('\n');
@@ -53,13 +68,22 @@ pub fn make_instr(rss: &ResourceDict, cmp: &Components, sys: &mut Systems, obj: 
     display.push_str("11. Continue immediately (useful as a placeholder)\n");
     display.push_str(ansi::RED);
     display.push_str("12. fail and cause an instruction error (useful as a warming)\n");
-    const LEN:usize = 13;
-    let mut option:Option<usize> = None; // Workaround because of the borrowchecker. The instruction has to be made after generic_select. 
-    let temp = generic_select(&display, LEN, |x| {option = Some(x); None}, cfg, |x| if let Clipboard::Instr(val, _) = x {Some(val.clone())} else {None});
-    if let Some(val) = temp{
+    const LEN: usize = 13;
+    let mut option: Option<usize> = None; // Workaround because of the borrowchecker. The instruction has to be made after generic_select.
+    let temp = generic_select(
+        &display,
+        LEN,
+        |x| {
+            option = Some(x);
+            None
+        },
+        cfg,
+        |x| if let Clipboard::Instr(val, _) = x { Some(val.clone()) } else { None },
+    );
+    if let Some(val) = temp {
         return Some(val);
     }
-    if let Some(val) = option{
+    if let Some(val) = option {
         match val {
             0 => Some(make_move(cfg)),
             1 => Some(make_jump(sys, cfg)),
@@ -178,10 +202,11 @@ pub fn instr_menu(rss: &ResourceDict, cmp: &Components, sys: &mut Systems, obj: 
         println!("Viewing {}", instr.display(obj, sys, rss, cmp));
         println!("{}", cfg.display(context::INSTR_MENU));
         println!("{}", display_options(instr, obj, sys, rss, cmp)); //Displays your options
-        let input: MenuRes = get_from_input_valid("", "Please enter a valid input!", cfg, |x:&MenuRes| x.in_bounds(&get_len(instr))); //Gets input
+        let input: MenuRes = get_from_input_valid("", "Please enter a valid input!", cfg, |x: &MenuRes| x.in_bounds(&get_len(instr))); //Gets input
         match input {
-            MenuRes::Exit => break,                                                                 //Exit
-            MenuRes::Enter(val) => parse_options(instr, val, obj, sys, rss, cmp, queue_len, cfg), /* Does something based on the instruction viewed. */
+            MenuRes::Exit => break,                                                               //Exit
+            MenuRes::Enter(val) => parse_options(instr, val, obj, sys, rss, cmp, queue_len, cfg), /* Does something based on the instruction
+                                                                                                    * viewed. */
             _ => wait_for_input(&format!("{}Please enter a valid input", ansi::RED), cfg),
         }
     }
