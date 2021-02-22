@@ -1,3 +1,4 @@
+
 use std::{collections::HashMap, str::FromStr};
 
 use crate::{component::recipe::Recipe, ui::config::Config};
@@ -76,7 +77,7 @@ pub fn grab_location(file: &FileObject) -> Location {
 }
 pub const RESOURCES: &str = "Resources";
 pub const TRANSFER_COST: &str = "Move Cost";
-const RSSMOD: &str = "ResourceMod";
+const RSSMOD:&str = "ResourceMod";
 pub fn rss(file: &FileObject) -> ResourceDict {
     let res = file.get(RESOURCES);
     let mut names: Vec<String> = Vec::new();
@@ -85,7 +86,13 @@ pub fn rss(file: &FileObject) -> ResourceDict {
         for (name, data) in val.grab_contents() {
             names.push(name.clone());
             if let Some(val) = data.get(TRANSFER_COST) {
-                transfer_costs.push(parse(val, u64::MAX));
+                if let Ok(val) = val.name().parse::<u64>() {
+                    transfer_costs.push(val);
+                } else if val.name() == "MAX" {
+                    transfer_costs.push(u64::MAX);
+                } else {
+                    panic!("{:?} cannot be parsed!", val.name());
+                }
             } else {
                 panic!("Couldn't find transfer cost for {:?}!", name);
             }
@@ -94,35 +101,30 @@ pub fn rss(file: &FileObject) -> ResourceDict {
         let _ = 1;
         panic!("No resource object was found in {:?}!", file);
     }
-    if let Some(val) = file.get(RSSMOD) {
+    if let Some(val) = file.get(RSSMOD){
         let temp = rss_mod(val, &names);
         ResourceDict::new(names, transfer_costs, temp.0, temp.1, temp.2)
     } else {
         ResourceDict::new(names, transfer_costs, HashMap::new(), HashMap::new(), None)
     }
 }
-const REQUIRES: &str = "Requires";
-const GROWTH: &str = "Growth";
-const TRANSFER: &str = "IsTransfer";
+const REQUIRES:&str = "Requires";
+const GROWTH:&str = "Growth";
+const TRANSFER:&str = "IsTransfer";
 pub fn rss_mod(
-    file: &FileObject, names: &Vec<String>,
+    file: &FileObject, names: &Vec<String>
 ) -> (
     HashMap<ResourceID, f64>,
     HashMap<ResourceID, HashMap<ResourceID, f64>>,
     Option<ResourceID>,
 ) {
-    let mut res1: HashMap<ResourceID, f64> = HashMap::new();
-    let mut res2: HashMap<ResourceID, HashMap<ResourceID, f64>> = HashMap::new();
-    let mut res3: Option<ResourceID> = None;
-    for (name, line) in file.grab_contents() {
-        let idpos = ResourceID::new(
-            names
-                .iter()
-                .position(|x| x == name)
-                .expect(&format!("{:?} is not inside the resource dictionary!", name)),
-        );
-        if let Some(val) = line.get(REQUIRES) {
-            let mut intermediate: HashMap<ResourceID, f64> = HashMap::new();
+    let mut res1:HashMap<ResourceID, f64> = HashMap::new();
+    let mut res2:HashMap<ResourceID, HashMap<ResourceID, f64>> = HashMap::new();
+    let mut res3:Option<ResourceID> = None;
+    for (name, line) in file.grab_contents(){
+        let idpos = ResourceID::new(names.iter().position(|x| x == name).expect(&format!("{:?} is not inside the resource dictionary!", name)));
+        if let Some(val) = line.get(REQUIRES){
+            let mut intermediate:HashMap<ResourceID, f64> = HashMap::new();
             for (name, new) in val.grab_contents() {
                 if let Some(resource) = names.iter().position(|x| x == name) {
                     intermediate.insert(ResourceID::new(resource), parse(new, f64::MAX));
@@ -132,11 +134,11 @@ pub fn rss_mod(
             }
             res2.insert(idpos, intermediate);
         }
-        if let Some(val) = line.get(GROWTH) {
+        if let Some(val) = line.get(GROWTH){
             res1.insert(idpos, parse(val, f64::MAX));
         }
-        if let Some(_) = line.get(TRANSFER) {
-            if res3.is_none() {
+        if let Some(_) = line.get(TRANSFER){
+            if res3.is_none(){
                 res3 = Some(idpos);
             } else {
                 panic!("Only one resource can be used as transfer currency!");
@@ -172,10 +174,10 @@ pub fn cmp(rss: &ResourceDict, file: &FileObject) -> Components {
         }
     }
     if let Some(val) = file.get(RECIPE) {
-        for (name, val) in val.grab_contents() {
+        for (name, val) in val.grab_contents(){
             r_names.push(name.clone());
             let mut recipe = Recipe::new(rss.len());
-            for (name, val) in val.grab_contents() {
+            for (name, val) in val.grab_contents(){
                 let resource = rss.find(name).expect(&format!("Couldn't find {} in resources!", name));
                 let amt = parse(val, i64::MAX);
                 recipe.cost()[resource.get()] = amt;
@@ -200,10 +202,7 @@ pub fn generate_component(file: &FileObject, rss: &ResourceDict) -> Component {
             if let Some(resource) = rss.find(name) {
                 res.change_cost(resource, parse(new, i64::MAX));
             } else {
-                panic!(
-                    "{:?} is not inside the resource dictionary! Contents of resource dictionary: {:?}",
-                    name, rss
-                );
+                panic!("{:?} is not inside the resource dictionary!", name);
             }
         }
     }
@@ -224,23 +223,19 @@ pub fn generate_component(file: &FileObject, rss: &ResourceDict) -> Component {
             if let Some(resource) = rss.find(name) {
                 res.change_storage(resource, parse(new, u64::MAX));
             } else {
-                panic!(
-                    "{:?} is not inside the resource dictionary! Contents of resource dictionary: {:?}",
-                    name, rss
-                );
+                panic!("{:?} is not inside the resource dictionary!", name);
             }
         }
     }
     res
 }
-pub const MAX: &str = "MAX";
 fn parse<T>(obj: &FileObject, max: T) -> T
 where
     T: FromStr, {
     let val = obj.name().trim();
     if let Ok(val) = val.parse::<T>() {
         val
-    } else if obj.name() == MAX {
+    } else if obj.name() == "MAX" {
         max
     } else {
         panic!("{:?} cannot be parsed!", obj.name());

@@ -1,7 +1,6 @@
-use crate::{
-    resources::ResourceDict,
-    systems::{object_id::ObjectID, Systems},
-};
+use std::io::stdin;
+
+use crate::{resources::ResourceDict, systems::{object_id::ObjectID, Systems}};
 
 #[derive(Clone, Debug)]
 pub struct Template {
@@ -23,6 +22,8 @@ impl Template {
         &self.surplus
     }
     pub fn install(&self, obj: ObjectID, sys: &mut Systems) -> bool {
+        println!("Installing {:?}", self);
+        stdin().read_line(&mut String::new());
         if sys.get_o(obj).resources_mut().spend(self.cost()) {
             sys.get_o(obj).resources_mut().add_storage_vec(self.storage());
             sys.get_o(obj).resources_mut().add_surplus_vec(self.surplus());
@@ -35,7 +36,7 @@ impl Template {
         match self.transfer_cost {
             Some(val) => {
                 let mut real_cost: Vec<i64> = self.cost().clone();
-                if let Some(id) = rss.get_transfer() {
+                if let Some(id) = rss.get_transfer(){
                     real_cost[id.get()] += val as i64;
                 }
                 if sys.get_o(orig).resources_mut().spend(&real_cost) {

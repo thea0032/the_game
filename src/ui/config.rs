@@ -1,12 +1,10 @@
-use std::{
-    fs::File,
-    io::{stdin, stdout, Write},
-    str::FromStr,
-};
+use std::{fs::File, io::{stdin, stdout, Write}, str::FromStr};
+
+
 
 use crate::{extra_bits, file::FilePresets};
 
-use super::clipboard::Clipboard;
+use super::{clipboard::Clipboard};
 use super::defaults;
 
 const PATH: &str = "stuff";

@@ -8,8 +8,6 @@ use crate::{
 use super::{
     ansi,
     config::Config,
-    context::QUICK_MENU,
-    from_str::{InBounds, MenuRes},
     instr,
     io::{get_from_input_valid, wait_for_input},
 };
@@ -17,13 +15,18 @@ use super::{
 pub fn quickie(rss: &ResourceDict, cmp: &Components, sys: &mut Systems, dir: &mut Quickie, obj: ObjectID, cfg: &mut Config) {
     loop {
         print!("{}", ansi::GREEN);
-        println!("{}", cfg.display(QUICK_MENU));
-        println!("{}", dir.display(obj, sys, rss, cmp)); //Displays options
-        let input: MenuRes = get_from_input_valid("", "Please enter a valid input", cfg, |x: &MenuRes| x.in_bounds(&dir.len())); //Gets option
+        println!("0. Go back");
+        println!("1. Add a permanent instruction");
+        println!("2. Add a temporary instruction");
+        println!("3. Remove an instruction.");
+        let len = 4;
+        println!("{}", dir.display(len, obj, sys, rss, cmp)); //Displays options
+        let input: usize = get_from_input_valid("", "Please enter a valid input", cfg, |x| *x < len + dir.len()); //Gets option
+
         match input {
-            MenuRes::Exit => break, //Breaks out of menu
-            MenuRes::New => {
-                println!("{}", dir.display(obj, sys, rss, cmp));
+            0 => break, //Breaks out of menu
+            1 => {
+                println!("{}", dir.display(0, obj, sys, rss, cmp));
                 println!("{}. Add on end", dir.len()); //Displays options
                 let pos = get_from_input_valid(
                     "Enter the place where you want to add an instruction",
@@ -41,8 +44,8 @@ pub fn quickie(rss: &ResourceDict, cmp: &Components, sys: &mut Systems, dir: &mu
                 }
                 wait_for_input("Press enter to continue: ", cfg); //Waits for input
             }
-            MenuRes::Tick => {
-                println!("{}", dir.display(obj, sys, rss, cmp));
+            2 => {
+                println!("{}", dir.display(0, obj, sys, rss, cmp));
                 println!("{}. Add on end", dir.len());
                 let pos = get_from_input_valid(
                     "Enter the place where you want to add an instruction",
@@ -61,8 +64,8 @@ pub fn quickie(rss: &ResourceDict, cmp: &Components, sys: &mut Systems, dir: &mu
                                                                   // but the instruction
                                                                   // is temporary
             }
-            MenuRes::Del => {
-                println!("{}", dir.display(obj, sys, rss, cmp));
+            3 => {
+                println!("{}", dir.display(0, obj, sys, rss, cmp));
                 println!("{}{}. abort", ansi::RED, dir.len()); //Displays options
                 let pos = get_from_input_valid(
                     "Enter the place where you want to remove an instruction: ",
@@ -80,21 +83,11 @@ pub fn quickie(rss: &ResourceDict, cmp: &Components, sys: &mut Systems, dir: &mu
                 }
                 wait_for_input("Press enter to continue: ", cfg); //waits for input
             }
-            MenuRes::Enter(val) => {
-                let len = dir.len(); //Gets length
-                instr::instr_menu(rss, cmp, sys, obj, &mut dir.get(val), len, cfg);
-                //Enters instruction menu
-            }
             _ => {
-                wait_for_input(&format!("{}Please enter a valid input", ansi::RED), cfg);
+                let len = dir.len(); //Gets length
+                instr::instr_menu(rss, cmp, sys, obj, &mut dir.get(input - 4), len, cfg);
+                //Enters instruction menu
             }
         } //Responds to options
     }
-}
-pub fn quickie_context(ctx: &mut Vec<String>, dis: &mut Vec<bool>, cfg: &Config) {
-    cfg.update_context_all(dis);
-    cfg.update_context(Config::QUIT, Some("exit".to_string()), ctx, dis);
-    cfg.update_context(Config::NEW, Some("add a permanent instruction".to_string()), ctx, dis);
-    cfg.update_context(Config::DELETE, Some("remove an instruction".to_string()), ctx, dis);
-    cfg.update_context(Config::TICK, Some("add a temporary instruction".to_string()), ctx, dis);
 }

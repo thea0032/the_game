@@ -169,7 +169,7 @@ impl Instr {
                 let mut temp = rss.get_transfer_costs().iter(); //Generates transfer cost.
                 let transfer_cap_cost: u64 = val1.iter().map(|x| x * temp.next().unwrap()).sum(); //Sums transfer costs up.
                 let mut total_cost = val1.clone(); //Generates a clone, that we can manipulate.
-                if let Some(val) = rss.get_transfer() {
+                if let Some(val) = rss.get_transfer(){
                     total_cost[val.get()] += transfer_cap_cost; //Adds the cost of transferring resources on.
                 }
                 if !sys.get_o(obj).resources_mut().spend_unsigned(&total_cost) {
@@ -192,7 +192,7 @@ impl Instr {
                 let mut temp = rss.get_transfer_costs().iter(); //Generates transfer cost.
                 let transfer_cap_cost: u64 = val1.iter().map(|x| x * temp.next().unwrap()).sum(); //Sums transfer costs up.
                 let mut total_cost = val1.clone(); //Generates a clone, that we can manipulate.
-                if let Some(val) = rss.get_transfer() {
+                if let Some(val) = rss.get_transfer(){
                     total_cost[val.get()] += transfer_cap_cost; //Adds the cost of transferring resources on.
                 }
                 if !sys.get_o(*val2).resources_mut().spend_unsigned(&total_cost) {
@@ -536,10 +536,10 @@ impl Quickie {
         self.res.insert(index, InstrRes::Continue);
         self.del.insert(index, del);
     } //Adds a new function
-    pub fn display(&self, obj: ObjectID, sys: &Systems, rss: &ResourceDict, cmp: &Components) -> String {
+    pub fn display(&self, amt_before: usize, obj: ObjectID, sys: &Systems, rss: &ResourceDict, cmp: &Components) -> String {
         let mut res: String = "".to_string(); //Initializes result
         for (i, line) in self.dirs.iter().enumerate() {
-            res.push_str(&format!("{}{}. {}", self.color(i), i, line.display(obj, sys, rss, cmp))); //Adds a few things
+            res.push_str(&format!("{}{}. {}", self.color(i), i + amt_before, line.display(obj, sys, rss, cmp))); //Adds a few things
             if self.del[i] {
                 //If it's temporary...
                 res.push_str(" (temp)"); //helpful text

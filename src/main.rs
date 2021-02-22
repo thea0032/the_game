@@ -1,7 +1,5 @@
 #![allow(clippy::ptr_arg)]
 
-use std::io::stdin;
-
 use component::Components;
 use file::{FileObject, FilePresets};
 use instr::Directions;
@@ -15,7 +13,6 @@ mod instr;
 mod location;
 mod object;
 mod resources;
-mod save;
 #[allow(dead_code)]
 mod shape;
 mod system;
