@@ -1,4 +1,3 @@
-use std::io::stdin;
 
 use crate::resources::*;
 use crate::{component::*, extra_bits};
@@ -49,8 +48,6 @@ impl Object {
         &mut self.resources
     } //Mutable getter
     pub fn to_template(&self, cmp: &Components, rss: &ResourceDict, name: String) -> Template {
-        println!("Converting {:?} to template", self);
-        stdin().read_line(&mut String::new());
         let mut surplus: Vec<i64> = extra_bits::fill(rss.len(), 0);
         let mut storage: Vec<u64> = extra_bits::fill(rss.len(), 0);
         let mut cost: Vec<i64> = extra_bits::fill(rss.len(), 0); //initializes vectors

@@ -1,4 +1,3 @@
-use std::io::stdin;
 
 use crate::{resources::ResourceDict, systems::{object_id::ObjectID, Systems}};
 
@@ -22,8 +21,6 @@ impl Template {
         &self.surplus
     }
     pub fn install(&self, obj: ObjectID, sys: &mut Systems) -> bool {
-        println!("Installing {:?}", self);
-        stdin().read_line(&mut String::new());
         if sys.get_o(obj).resources_mut().spend(self.cost()) {
             sys.get_o(obj).resources_mut().add_storage_vec(self.storage());
             sys.get_o(obj).resources_mut().add_surplus_vec(self.surplus());
