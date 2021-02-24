@@ -1,4 +1,4 @@
-use std::io::{stdin, stdout, Write};
+use std::{io::{stdin, stdout, Write}, str::FromStr};
 
 use super::from_str::FromString;
 
@@ -28,6 +28,26 @@ pub fn get_str_unparsed(msg: &str, cfg: &mut Config) -> String {
     refresh(); //Refreshes stuff
     s //Returns the string
 } //The basic get_str function, w/o parsing.
+pub fn get_str_raw(msg: &str) -> String {
+    print!("{}", msg); //Prints out the message
+    let _ = stdout().flush(); //Flushes output
+    let mut s = String::new(); //Initializes a string
+    stdin().read_line(&mut s).expect("Something went horribly wrong!"); //Reads the line from standard input
+    if let Some('\n') = s.chars().next_back() {
+        s.pop(); //Removes newline character
+    }
+    if let Some('\r') = s.chars().next_back() {
+        s.pop(); //Removes carriage return character
+    }
+    s
+}
+pub fn get_raw<T>(msg: &str) -> T where T: FromStr {
+    loop{
+        if let Ok(val) = T::from_str(&get_str_raw(msg)) {
+            break val
+        }
+    }
+}
 pub fn get_str(msg: &str, cfg: &mut Config) -> String {
     if !cfg.line_queue().is_empty() {
         return cfg.line_queue().remove(0);

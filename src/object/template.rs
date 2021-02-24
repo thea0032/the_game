@@ -21,9 +21,9 @@ impl Template {
         &self.surplus
     }
     pub fn install(&self, obj: ObjectID, sys: &mut Systems) -> bool {
-        if sys.get_o(obj).resources_mut().spend(self.cost()) {
-            sys.get_o(obj).resources_mut().add_storage_vec(self.storage());
-            sys.get_o(obj).resources_mut().add_surplus_vec(self.surplus());
+        if sys.get_object_mut(obj).resources_mut().spend(self.cost()) {
+            sys.get_object_mut(obj).resources_mut().add_storage_vec(self.storage());
+            sys.get_object_mut(obj).resources_mut().add_surplus_vec(self.surplus());
             true
         } else {
             false
@@ -36,9 +36,9 @@ impl Template {
                 if let Some(id) = rss.get_transfer(){
                     real_cost[id.get()] += val as i64;
                 }
-                if sys.get_o(orig).resources_mut().spend(&real_cost) {
-                    sys.get_o(dest).resources_mut().add_storage_vec(self.storage());
-                    sys.get_o(dest).resources_mut().add_surplus_vec(self.surplus());
+                if sys.get_object_mut(orig).resources_mut().spend(&real_cost) {
+                    sys.get_object_mut(dest).resources_mut().add_storage_vec(self.storage());
+                    sys.get_object_mut(dest).resources_mut().add_surplus_vec(self.surplus());
                     true
                 } else {
                     false

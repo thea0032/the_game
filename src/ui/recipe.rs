@@ -54,11 +54,11 @@ pub fn select_recipes_unfiltered(cmp: &Components, cfg: &mut Config) -> Option<(
     ); //Gets amount
     Some((recipe, amt)) //Returns value
 }
-pub fn r_details(rss: &ResourceDict, cmp: &mut Components, cfg: &mut Config) {
+pub fn r_details(rss: &ResourceDict, cmp: &Components, cfg: &mut Config) {
     println!("{}", cmp.display_detailed_r(rss));
     wait_for_input("Press enter to continue:", cfg);
 }
-pub fn r_detail(rss: &ResourceDict, cmp: &mut Components, cfg: &mut Config) {
+pub fn r_detail(rss: &ResourceDict, cmp: &Components, cfg: &mut Config) {
     let temp = select_recipe_unfiltered(cmp, cfg);
     if let Some(val) = temp {
         cmp.display_one_r(rss, val);
@@ -71,7 +71,7 @@ pub fn r_detail(rss: &ResourceDict, cmp: &mut Components, cfg: &mut Config) {
         println!("Operation aborted!");
     }
 }
-pub fn perform_recipe(cmp: &mut Components, obj: &mut Object, cfg: &mut Config) {
+pub fn perform_recipe(cmp: &Components, obj: &mut Object, cfg: &mut Config) {
     let recipe = select_recipes(cmp, obj, cfg);
     if let Some(recipe) = recipe {
         let amt_success = obj.do_recipes(recipe.0, cmp, recipe.1);

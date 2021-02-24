@@ -19,7 +19,7 @@ use super::{
 
 pub fn instrs_menu(sys: &mut Systems, obj: ObjectID, cmp: &Components, rss: &ResourceDict, instrs: &mut Instrs, cfg: &mut Config) {
     loop {
-        println!("Viewing current instructions for {}:", sys.get_o_name(obj));
+        println!("Viewing current instructions for {}:", sys.get_object_name(obj));
         print!("{}", ansi::GREEN);
         println!("{}", cfg.display(context::INSTRS_MENU));
         println!("{}", instrs.display()); //Prints stuff

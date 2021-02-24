@@ -9,7 +9,7 @@ use crate::{
 };
 
 use crate::instr::condition::Condition;
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub enum Instr {
     Move(Location), //Move to a location.
     Jump(SystemID), //Jump to another system.
@@ -30,7 +30,7 @@ pub enum Instr {
     Fail,                                 //Fails.
 } //An instruction. Automates the boring parts of this game.
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct InstrID {
     //Instruction identification wrapper, to make it obvious what the usize will refer to.
     id: usize,
@@ -43,7 +43,7 @@ impl InstrID {
         self.id
     } //Simple getter
 }
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub enum InstrRes {
     //Instructions, when executed, return an instruction result. Here's what these results mean:
     Success(usize), //The instruction has finished, and you should go to the next thing.
@@ -59,18 +59,18 @@ impl Instr {
         match self {
             Instr::Move(val) => {
                 //Movement
-                if val.eq(sys.get_o(obj).get_location()) {
+                if val.eq(sys.get_object_mut(obj).get_location()) {
                     //If we're already at the destination...
                     return InstrRes::Success(pos + 1); //We've succeeded! onto
                                                        // the next thing!
                 }
-                let movement: f64 = sys.get_o(obj).resources().get_curr(rss.find("Movement").unwrap()) as f64; //Amount of movement generated
-                let mass: f64 = sys.get_o(obj).resources().get_curr(rss.find("Mass").unwrap()) as f64; //Mass of the object
+                let movement: f64 = sys.get_object_mut(obj).resources().get_curr(rss.find("Movement").unwrap()) as f64; //Amount of movement generated
+                let mass: f64 = sys.get_object_mut(obj).resources().get_curr(rss.find("Mass").unwrap()) as f64; //Mass of the object
                 let distance = movement / mass; //Distance travelled (this is an Aristotelian universe, where force = mass *
                                                 // velocity)
-                sys.get_o(obj).get_location().move_towards(*val, distance); //Moves towards the location
-                sys.get_o(obj).resources_mut().change_amt(rss.find("Movement").unwrap(), 0); //Resets the movement generated to zero
-                if (*sys.get_o(obj).get_location()).eq(val) {
+                sys.get_object_mut(obj).get_location().move_towards(*val, distance); //Moves towards the location
+                sys.get_object_mut(obj).resources_mut().change_amt(rss.find("Movement").unwrap(), 0); //Resets the movement generated to zero
+                if (*sys.get_object_mut(obj).get_location()).eq(val) {
                     //If we got there...
                     return InstrRes::Success(pos + 1); //We've succeeded! Onto
                                                        // the next thing!
@@ -134,7 +134,7 @@ impl Instr {
             }
             Instr::Jump(val) => {
                 //Jumps to a different system:
-                if val.get() == sys.get_o_sys(obj).get() {
+                if val.get() == sys.get_objects_system(obj).get() {
                     //If we're already in the right system...
                     return InstrRes::Success(pos + 1); //Success!
                 }
@@ -143,7 +143,7 @@ impl Instr {
             }
             Instr::MoveTo(val) => {
                 //Moves to another object.
-                match Instr::Jump(sys.get_o_sys(*val)).exe(obj, pos, sys, rss, cmp) {
+                match Instr::Jump(sys.get_objects_system(*val)).exe(obj, pos, sys, rss, cmp) {
                     //Starts by jumping to the system the object is in.
                     InstrRes::Continue => return InstrRes::Continue, /* If it's in progress, */
                     // return the result and
@@ -153,7 +153,7 @@ impl Instr {
                     // failure.
                     InstrRes::Success(_) => {} //If we succeeded, continue on.
                 }
-                Instr::Move(*sys.get_o(*val).get_location()).exe(obj, pos, sys, rss, cmp)
+                Instr::Move(*sys.get_object_mut(*val).get_location()).exe(obj, pos, sys, rss, cmp)
                 //We move to the object's location.
             }
             Instr::Transfer(val1, val2) => {
@@ -172,11 +172,11 @@ impl Instr {
                 if let Some(val) = rss.get_transfer(){
                     total_cost[val.get()] += transfer_cap_cost; //Adds the cost of transferring resources on.
                 }
-                if !sys.get_o(obj).resources_mut().spend_unsigned(&total_cost) {
+                if !sys.get_object_mut(obj).resources_mut().spend_unsigned(&total_cost) {
                     //Attempts to spend the resources. If it fails...
                     return InstrRes::Fail("Not enough resources!".to_string()); //fail!
                 }
-                sys.get_o(*val2).resources_mut().gain_unsigned(val1); //Otherwise, gain extra resources.
+                sys.get_object_mut(*val2).resources_mut().gain_unsigned(val1); //Otherwise, gain extra resources.
                 InstrRes::Success(pos + 1) //We've succeeded!
             }
             Instr::Grab(val1, val2) => {
@@ -195,11 +195,11 @@ impl Instr {
                 if let Some(val) = rss.get_transfer(){
                     total_cost[val.get()] += transfer_cap_cost; //Adds the cost of transferring resources on.
                 }
-                if !sys.get_o(*val2).resources_mut().spend_unsigned(&total_cost) {
+                if !sys.get_object_mut(*val2).resources_mut().spend_unsigned(&total_cost) {
                     //Attempts to spend the resources. If it fails...
                     return InstrRes::Fail("Not enough resources!".to_string()); //fail!
                 }
-                sys.get_o(obj).resources_mut().gain_unsigned(val1); //Otherwise, gain extra resources.
+                sys.get_object_mut(obj).resources_mut().gain_unsigned(val1); //Otherwise, gain extra resources.
                 InstrRes::Success(pos + 1) //We've succeeded!
             }
             Instr::Sticky => InstrRes::Continue,      //Sticks to the instruction
@@ -207,7 +207,7 @@ impl Instr {
             Instr::Fail => InstrRes::Fail("This instruction was supposed to fail.".to_string()), /* Fails */
             Instr::PerformRecipe(recipe, amt) => {
                 //Performs a recipe.
-                let amt_success = sys.get_o(obj).do_recipes(*recipe, cmp, *amt); //Performs recipes, gets amount of successes.
+                let amt_success = sys.get_object_mut(obj).do_recipes(*recipe, cmp, *amt); //Performs recipes, gets amount of successes.
                 if &amt_success == amt {
                     //If we did all of them...
                     InstrRes::Success(pos + 1) //We've succeeded!
@@ -217,7 +217,7 @@ impl Instr {
             }
             Instr::InstallComponent(component, amt) => {
                 //Installs a component.
-                let amt_success = sys.get_o(obj).install_components(*component, cmp, *amt); //Installs components, gets amount of successes.
+                let amt_success = sys.get_object_mut(obj).install_components(*component, cmp, *amt); //Installs components, gets amount of successes.
                 if &amt_success == amt {
                     //If we did all of them...
                     InstrRes::Success(pos + 1) //We've succeeded!
@@ -245,31 +245,31 @@ impl Instr {
             Instr::Move(val) => {
                 format!(
                     "Move from ({}, {}) to ({}, {})",
-                    sys.get_o_stat(obj).get_location_stat().x,
-                    sys.get_o_stat(obj).get_location_stat().y,
+                    sys.get_object(obj).get_location_stat().x,
+                    sys.get_object(obj).get_location_stat().y,
                     val.x,
                     val.y
                 )
             }
             Instr::Jump(val) => {
-                format!("Jumping from {} to {}", sys.get_o_sys(obj).get(), val.get())
+                format!("Jumping from {} to {}", sys.get_objects_system(obj).get(), val.get())
             }
             Instr::Transfer(val1, val2) => {
                 format!(
                     "Transfer {} to {}",
                     crate::resources::display_vec_one(rss, val1, ", "),
-                    sys.get_o_name(*val2)
+                    sys.get_object_name(*val2)
                 )
             }
             Instr::Grab(val1, val2) => {
                 format!(
                     "Grab {} from {}",
                     crate::resources::display_vec_one(rss, val1, ", "),
-                    sys.get_o_name(*val2)
+                    sys.get_object_name(*val2)
                 )
             }
             Instr::MoveTo(val) => {
-                format!("Move to {}", sys.get_o_name(*val))
+                format!("Move to {}", sys.get_object_name(*val))
             }
             Instr::If(val1, val2, val3) => {
                 format!(
@@ -294,7 +294,7 @@ impl Instr {
         }
     } //Displays instructions. Shouls be simple enough.
 }
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Queue {
     queue: Vec<Instr>,      //The instructions themselves.
     delete_after_exe: bool, //Whether we delete instructions after they execute.
@@ -414,7 +414,7 @@ impl Queue {
         &mut self.queue[pos]
     } //Returns the instruction at the position given.
 }
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Instrs {
     instrs: Vec<Queue>, //The queues.
     names: Vec<String>, //The names of the queues.
@@ -481,7 +481,7 @@ impl Instrs {
         }
     } //Merges the other instructions into this one
 }
-#[derive(Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Quickie {
     dirs: Vec<Instr>,   //The directions
     res: Vec<InstrRes>, //The last results of the instruction
@@ -569,6 +569,7 @@ impl Quickie {
         &mut self.dirs[i]
     } //Gets a certain index
 }
+#[derive(serde::Deserialize, serde::Serialize)]
 pub struct Directions {
     directions: Vec<Instrs>,
     quick: Vec<Quickie>,

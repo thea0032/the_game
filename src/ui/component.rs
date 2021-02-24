@@ -13,7 +13,7 @@ pub fn select_components_unfiltered(cmp: &Components, cfg: &mut Config) -> Optio
     Some((component, amt)) //Returns result
 } //Returns a component, and an amount to install from input. None if aborted.
 
-pub fn detail(rss: &ResourceDict, cmp: &mut Components, cfg: &mut Config) {
+pub fn detail(rss: &ResourceDict, cmp: &Components, cfg: &mut Config) {
     let temp = select_component_unfiltered(cmp, cfg);
     if let Some(val) = temp {
         cmp.display_one(rss, val);
@@ -35,7 +35,7 @@ pub fn select_component_unfiltered(cmp: &Components, cfg: &mut Config) -> Option
         |x| if let Clipboard::Component(val) = &x { Some(*val) } else { None },
     )
 } //Returns a component. None if aborted.
-pub fn select_components_filtered(cmp: &mut Components, v: &Vec<usize>, cfg: &mut Config) -> Option<(ComponentID, usize)> {
+pub fn select_components_filtered(cmp: &Components, v: &Vec<usize>, cfg: &mut Config) -> Option<(ComponentID, usize)> {
     let is_included: Vec<bool> = v.iter().map(|x| x != &0).collect(); //Maps whether each option is displayed
     let len = is_included.iter().filter(|x| **x).count(); //The amount of options displayed
     let input: Option<ComponentID> = generic_select(
@@ -64,11 +64,11 @@ pub fn select_components_filtered(cmp: &mut Components, v: &Vec<usize>, cfg: &mu
     ); //Gets an amount
     Some((id, amt)) //Returns a value
 }
-pub fn details(rss: &ResourceDict, cmp: &mut Components, cfg: &mut Config) {
+pub fn details(rss: &ResourceDict, cmp: &Components, cfg: &mut Config) {
     println!("{}", cmp.display_detailed(rss)); //Displays helpful stuff
     wait_for_input("Press enter to continue:", cfg); //So you can see everything
 }
-pub fn add_component(cmp: &mut Components, obj: &mut Object, cfg: &mut Config) {
+pub fn add_component(cmp: &Components, obj: &mut Object, cfg: &mut Config) {
     let amts: Vec<usize> = cmp.list.iter().map(|x| obj.resources().amt_contained(x.cost())).collect(); //Gets amount of components you can afford
     let component = select_components_filtered(cmp, &amts, cfg); //Gets a component that you can afford
     if let Some(component) = component {
@@ -80,7 +80,7 @@ pub fn add_component(cmp: &mut Components, obj: &mut Object, cfg: &mut Config) {
     wait_for_input("Press enter to continue:", cfg); //Makes sure that you can see
                                                      // the message
 }
-pub fn remove_component(cmp: &mut Components, obj: &mut Object, cfg: &mut Config) {
+pub fn remove_component(cmp: &Components, obj: &mut Object, cfg: &mut Config) {
     let component = select_components_filtered(cmp, obj.get_cmp_amts(), cfg); //Gets a component that you currently have
     if let Some(component) = component {
         //If you didn't abort...

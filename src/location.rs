@@ -1,4 +1,4 @@
-#[derive(Clone, Debug, Copy)]
+#[derive(Clone, Debug, Copy, serde::Serialize, serde::Deserialize)]
 pub struct Location {
     pub x: f64,
     pub y: f64,

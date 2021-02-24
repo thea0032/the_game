@@ -66,7 +66,7 @@ impl Object {
             self.component_amounts[id.id()] += 1;
         }
     }
-    pub fn remove_components(&mut self, id: ComponentID, cmp: &mut Components, amt: usize) -> usize {
+    pub fn remove_components(&mut self, id: ComponentID, cmp: &Components, amt: usize) -> usize {
         for i in 0..amt {
             let component = cmp.get(id);
             if !self.resources.gain(component.cost())

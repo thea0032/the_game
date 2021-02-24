@@ -8,7 +8,7 @@ mod component;
 mod display;
 pub mod template;
 mod tick;
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct Object {
     location: Location,              //The object's current location.
     resources: Resources,            //The resources the object has.

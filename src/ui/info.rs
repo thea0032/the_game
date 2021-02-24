@@ -2,7 +2,7 @@ use crate::{component::Components, resources::ResourceDict};
 
 use super::{ansi, component::{detail, details}, config::Config, context::INFO, from_str::{InBounds, MenuRes}, io::{get_from_input_valid, wait_for_input}, recipe::{r_detail, r_details}};
 
-pub fn information(rss: &ResourceDict, cmp: &mut Components, cfg: &mut Config) {
+pub fn information(rss: &ResourceDict, cmp: &Components, cfg: &mut Config) {
     loop {
         println!("{}", cfg.display(INFO));
         println!("What do you want to get information on?");

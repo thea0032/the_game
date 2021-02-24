@@ -11,14 +11,14 @@ use crate::{
 use crate::{instr::Directions, systems::system_id::SystemID, ui::io::*};
 
 use super::object::get_object;
-pub fn system_menu(rss: &ResourceDict, cmp: &mut Components, sys: &mut Systems, system: SystemID, dir: &mut Directions, cfg: &mut Config) {
+pub fn system_menu(rss: &ResourceDict, cmp: &Components, sys: &mut Systems, system: SystemID, dir: &mut Directions, cfg: &mut Config) {
     loop {
-        println!("Viewing {}", sys.get_s_name(system));
+        println!("Viewing {}", sys.get_system_name(system));
         println!("{}", cfg.display(context::SYSTEM_MENU));
-        println!("{}", sys.get_s_stat(system).display(sys.get_o_names(), sys));
+        println!("{}", sys.get_system(system).display(sys.get_object_names(), sys));
         print!("{}", ansi::RESET); //Print statements are self-explanatory
         let response: MenuRes = get_from_input_valid("", "Please enter a valid input.", cfg, |x: &MenuRes| {
-            x.in_bounds(&sys.get_s_stat(system).len())
+            x.in_bounds(&sys.get_system(system).len())
         }); //Gets your response
         match response {
             MenuRes::Tick => sys.tick(rss, cmp, dir), //If it's zero, we tick
@@ -27,12 +27,12 @@ pub fn system_menu(rss: &ResourceDict, cmp: &mut Components, sys: &mut Systems, 
                 make_object(rss, cmp, sys, dir, system, cfg);
             }
             MenuRes::Enter(val) => {
-                let actual_id = sys.get_s(system).get_objs()[val];
+                let actual_id = sys.get_system_mut(system).get_objs()[val];
                 object_menu(rss, cmp, sys, actual_id, dir, cfg)
             }
             MenuRes::Copy(val) => {
                 *(cfg.clipboard(val)) = Clipboard::SystemID(system);
-                wait_for_input(&format!("Copied system {} to the clipboard!", sys.get_s_name(system)), cfg);
+                wait_for_input(&format!("Copied system {} to the clipboard!", sys.get_system_name(system)), cfg);
             }
             MenuRes::Paste(val) => {
                 if let Clipboard::Template(val) = &cfg.clipboard(val).clone() {
@@ -54,18 +54,18 @@ pub fn system_menu_context(ctx: &mut Vec<String>, dis: &mut Vec<bool>, cfg: &Con
     cfg.update_context(Config::NEW, Some("new object".to_string()), ctx, dis);
 }
 pub fn paste_object(
-    rss: &ResourceDict, cmp: &mut Components, sys: &mut Systems, system: SystemID, dir: &mut Directions, cfg: &mut Config, t: &Template,
+    rss: &ResourceDict, cmp: &Components, sys: &mut Systems, system: SystemID, dir: &mut Directions, cfg: &mut Config, t: &Template,
 ) {
     println!("Enter the source object:");
     let o = get_object(sys, system, cfg);
     if let Some(source) = o {
         println!("Creating the destination object...");
-        let val = sys.add_o(
+        let val = sys.add_object(
             rss,
             cmp,
             dir,
             get_str("What do you want to call your object?", cfg),
-            *sys.get_o_stat(source).get_location_stat(),
+            *sys.get_object(source).get_location_stat(),
             system,
         );
         println!("Creation done!");
@@ -83,13 +83,13 @@ pub fn paste_object(
 }
 pub fn select_object_filtered(sys: &Systems, id: SystemID, filter: Vec<bool>, cfg: &mut Config) -> Option<ObjectID> {
     loop {
-        println!("{}", sys.get_s_stat(id).display_filtered(0, &filter, sys.get_o_names()));
+        println!("{}", sys.get_system(id).display_filtered(0, &filter, sys.get_object_names()));
         let len = filter.iter().filter(|x| **x).count();
         let input: MenuRes = get_from_input_valid("Enter the object you want: ", "Please enter a valid id", cfg, |x: &MenuRes| {
             x.in_bounds(&len)
         });
         match input {
-            MenuRes::Enter(v) => return Some(sys.get_s_stat(id).get_objs()[crate::extra_bits::filter(v, &filter)]),
+            MenuRes::Enter(v) => return Some(sys.get_system(id).get_objs()[crate::extra_bits::filter(v, &filter)]),
             MenuRes::Exit | MenuRes::Del => return None,
             MenuRes::Paste(val) => match &cfg.clipboard(val) {
                 Clipboard::Object(val) => {
@@ -110,10 +110,10 @@ pub fn select_object_filtered(sys: &Systems, id: SystemID, filter: Vec<bool>, cf
     }
 }
 pub fn select_object_docked(sys: &Systems, id: ObjectID, cfg: &mut Config) -> Option<ObjectID> {
-    let curr_system_id = sys.get_o_sys(id);
-    let curr_location = *sys.get_o_stat(id).get_location_stat();
+    let curr_system_id = sys.get_objects_system(id);
+    let curr_location = *sys.get_object(id).get_location_stat();
     let filter: Vec<bool> = sys
-        .get_os(sys.get_s_stat(curr_system_id).get_objs())
+        .get_objects(sys.get_system(curr_system_id).get_objs())
         .iter()
         .map(|x| x.get_location_stat().eq(&curr_location))
         .collect();

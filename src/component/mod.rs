@@ -3,7 +3,7 @@ use crate::extra_bits;
 use crate::resources::*;
 
 use self::recipe::Recipe;
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct Components {
     pub list: Vec<Component>, //list of all accessible components
     pub names: Vec<String>,   //names of all accessible components
@@ -153,7 +153,7 @@ impl Components {
         self.recipe_list.len()
     }
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct Component {
     surplus: Vec<i64>,
     storage: Vec<u64>,
@@ -219,7 +219,7 @@ impl Component {
         x //returns result
     } //Displays lots of stuff
 }
-#[derive(Clone, Copy, Debug)]
+#[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
 pub struct ComponentID {
     id: usize,
     is_hidden: bool,
@@ -238,7 +238,7 @@ impl ComponentID {
         ComponentID { id, is_hidden: true }
     } //new, hidden set to true
 }
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
 pub struct RecipeID {
     id: usize,
 } //Recipe id wrapper

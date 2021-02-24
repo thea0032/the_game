@@ -3,7 +3,7 @@ use crate::{
     resources::{ResourceDict, ResourceID},
 };
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct Recipe {
     cost: Vec<i64>,
 }

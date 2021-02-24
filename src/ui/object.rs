@@ -18,14 +18,14 @@ use crate::{
 
 use super::recipe::perform_recipe;
 pub fn make_object(
-    rss: &ResourceDict, cmp: &mut Components, sys: &mut Systems, dir: &mut Directions, system: SystemID, cfg: &mut Config,
+    rss: &ResourceDict, cmp: &Components, sys: &mut Systems, dir: &mut Directions, system: SystemID, cfg: &mut Config,
 ) -> Option<ObjectID> {
     let name: String = get_str("What do you want to call your new object?", cfg); //Gets the object's name from input
     let loc = get_location(cfg); //Gets the object's location from input
     if get_from_input("Are you sure?", "Please enter true or false", cfg) {
         //
         println!("Object {} created!", name);
-        let res = sys.add_o(rss, cmp, dir, name, loc, system);
+        let res = sys.add_object(rss, cmp, dir, name, loc, system);
         wait_for_input("Press enter to continue.", cfg);
         Some(res)
     } else {
@@ -34,11 +34,11 @@ pub fn make_object(
         None
     }
 } //Makes an object
-pub fn object_menu(rss: &ResourceDict, cmp: &mut Components, sys: &mut Systems, obj: ObjectID, dir: &mut Directions, cfg: &mut Config) {
+pub fn object_menu(rss: &ResourceDict, cmp: &Components, sys: &mut Systems, obj: ObjectID, dir: &mut Directions, cfg: &mut Config) {
     loop {
         println!("Displaying...");
-        println!("Viewing {} ", sys.get_o(obj).name());
-        println!("{}", sys.get_o(obj).display(rss, cmp));
+        println!("Viewing {} ", sys.get_object_mut(obj).name());
+        println!("{}", sys.get_object_mut(obj).display(rss, cmp));
         println!("Options: ");
         println!("{}", cfg.display(context::OBJECT_MENU));
         println!("0. Use a recipe ");
@@ -52,9 +52,9 @@ pub fn object_menu(rss: &ResourceDict, cmp: &mut Components, sys: &mut Systems, 
         match response {
             MenuRes::Tick => sys.tick(rss, cmp, dir),                                           //Advance 1 tick
             MenuRes::Exit => break,                                                             //Break out of menu
-            MenuRes::New => add_component(cmp, sys.get_o(obj), cfg),                            //Add component
-            MenuRes::Del => remove_component(cmp, sys.get_o(obj), cfg),                         //Remove component
-            MenuRes::Enter(0) => perform_recipe(cmp, sys.get_o(obj), cfg),              //Perform recipe
+            MenuRes::New => add_component(cmp, sys.get_object_mut(obj), cfg),                            //Add component
+            MenuRes::Del => remove_component(cmp, sys.get_object_mut(obj), cfg),                         //Remove component
+            MenuRes::Enter(0) => perform_recipe(cmp, sys.get_object_mut(obj), cfg),              //Perform recipe
             MenuRes::Enter(1) => transfer(rss, sys, obj, cfg),                                  //Transfer resources
             MenuRes::Enter(2) => instrs::instrs_menu(sys, obj, cmp, rss, dir.instrs(obj), cfg), /* Enter instructions menu */
             MenuRes::Enter(3) => quickie(rss, cmp, sys, dir.quickie(obj), obj, cfg),            /* Enter quick */
@@ -62,7 +62,7 @@ pub fn object_menu(rss: &ResourceDict, cmp: &mut Components, sys: &mut Systems, 
             // menu
             MenuRes::Copy(val) => {
                 wait_for_input("Object copied!", cfg);
-                *cfg.clipboard(val) = Clipboard::Template(sys.get_o(obj).to_template(cmp, rss, "pasted template".to_string()))},
+                *cfg.clipboard(val) = Clipboard::Template(sys.get_object_mut(obj).to_template(cmp, rss, "pasted template".to_string()))},
             MenuRes::Paste(val) => {
                 match cfg.clipboard(val) {
                     Clipboard::Template(val) => {
@@ -113,11 +113,11 @@ pub fn object_menu_context(ctx: &mut Vec<String>, dis: &mut Vec<bool>, cfg: &Con
     cfg.update_context(Config::DELETE, Some("remove a component".to_string()), ctx, dis);
 }
 pub fn transfer(rss: &ResourceDict, sys: &mut Systems, obj: ObjectID, cfg: &mut Config) {
-    let temp = sys.get_o(obj).resources().get_currs().clone(); //Gets current resources
+    let temp = sys.get_object_mut(obj).resources().get_currs().clone(); //Gets current resources
     let mut max = temp.iter(); //Gets maximum resources
     let total_cap:Vec<u64>;
     if let Some(val) = rss.get_transfer(){
-        let transfer_cap = sys.get_o(obj).resources().get_curr(val); //Gets transfer capacity
+        let transfer_cap = sys.get_object_mut(obj).resources().get_curr(val); //Gets transfer capacity
         total_cap = resources::get_transfer_max(rss, transfer_cap)
             .into_iter()
             .map(|x| {
@@ -155,31 +155,31 @@ pub fn transfer(rss: &ResourceDict, sys: &mut Systems, obj: ObjectID, cfg: &mut 
     } else {
         return;
     };
-    if !sys.get_o(obj).resources_mut().rmv_res(resource, amt) {
+    if !sys.get_object_mut(obj).resources_mut().rmv_res(resource, amt) {
         println!("The transfer failed somehow!");
         wait_for_input("Press enter to continue:", cfg);
         return;
     }
     if let Some(val) = rss.get_transfer(){
         if !sys
-            .get_o(obj)
+            .get_object_mut(obj)
             .resources_mut()
             .rmv_res(val, amt * rss.get_transfer_costs()[resource.get()])
         {
-            sys.get_o(obj).resources_mut().add_res(resource, amt); //Undoes it
+            sys.get_object_mut(obj).resources_mut().add_res(resource, amt); //Undoes it
             println!("The transfer failed somehow!");
             wait_for_input("Press enter to continue:", cfg);
             return;
         }
     }
-    sys.get_o(other).resources_mut().add_res(resource, amt); //Succeeds; adds the resources to the other object
+    sys.get_object_mut(other).resources_mut().add_res(resource, amt); //Succeeds; adds the resources to the other object
     println!("{} resources were successfully transferred!", amt); //Helpful message
     wait_for_input("Press enter to continue:", cfg); //Waits
 }
 pub fn get_object(sys: &Systems, system: SystemID, cfg: &mut Config) -> Option<ObjectID> {
     generic_select(
-        &sys.get_s_stat(system).display(sys.get_o_names(), sys),
-        sys.get_s_stat(system).get_objs().len(),
+        &sys.get_system(system).display(sys.get_object_names(), sys),
+        sys.get_system(system).get_objs().len(),
         |x| Some(ObjectID::new(x)),
         cfg,
         |x| if let Clipboard::Object(val) = x { Some(*val) } else { None },

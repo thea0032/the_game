@@ -1,4 +1,4 @@
-#[derive(Clone, Debug, Copy)]
+#[derive(Clone, Debug, Copy, serde::Serialize, serde::Deserialize)]
 pub struct ObjectID {
     id: usize,
 } //Wrapper class for object pointer

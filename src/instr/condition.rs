@@ -3,7 +3,7 @@ use crate::{
     systems::{object_id::ObjectID, Systems},
 };
 //Conditions - used for advanced logic in-game. Not implemented yet!
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub enum Condition {
     _Not(Box<Condition>),      //Basic logic
     _And(Vec<Condition>),      //True if all are true, false otherwise

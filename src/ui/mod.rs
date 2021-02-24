@@ -11,7 +11,7 @@ mod from_str;
 mod info;
 mod instr;
 mod instrs;
-mod io;
+pub mod io;
 mod location;
 mod object;
 mod quickie;
@@ -28,7 +28,7 @@ use crate::{instr::Directions, systems::system_id::SystemID, ui::io::*};
 
 use self::{clipboard::Clipboard, config::Config, from_str::MenuRes};
 
-pub fn menu(rss: &ResourceDict, cmp: &mut Components, sys: &mut Systems, dir: &mut Directions, cfg: &mut Config) {
+pub fn menu(rss: &ResourceDict, cmp: &Components, sys: &mut Systems, dir: &mut Directions, cfg: &mut Config) {
     loop {
         println!("{}", ansi::RESET); //Resets the coloring
         println!("{}", cfg.display(context::MENU));

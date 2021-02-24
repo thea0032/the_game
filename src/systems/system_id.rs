@@ -1,4 +1,5 @@
-#[derive(Clone, Debug, Copy)]
+use serde::{Deserialize, Serialize};
+#[derive(Clone, Debug, Copy, Serialize, Deserialize)]
 pub struct SystemID {
     id: usize,
 } //Wrapper class for system pointer

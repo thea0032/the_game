@@ -1,10 +1,11 @@
+use serde::{Deserialize, Serialize};
 use crate::{
     location::Location,
     systems::{object_id::ObjectID, Systems},
     ui::ansi,
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct System {
     name: String,        //The system's name
     loc: Location,       //Where the system is located
@@ -24,7 +25,7 @@ impl System {
     pub fn display(&self, names: &Vec<String>, sys: &Systems) -> String {
         let mut res: String = "".to_string();
         for i in 0..self.objs.len() {
-            res.push_str(sys.get_o_stat(self.objs[i]).color());
+            res.push_str(sys.get_object(self.objs[i]).color());
             res.push_str(&format!("{}. {}\n", i, names[self.objs[i].get()]));
         }
         res
@@ -48,7 +49,7 @@ impl System {
         let mut is_yellow: bool = true;
         let mut is_green: bool = false;
         for i in &self.objs {
-            let c = sys.get_o_stat(*i).color();
+            let c = sys.get_object(*i).color();
             if c == ansi::RED {
                 return ansi::RED;
             } //Returns red if an object is red

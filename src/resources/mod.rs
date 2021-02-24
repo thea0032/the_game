@@ -5,7 +5,7 @@ use std::{cmp, collections::HashMap, fmt::Display};
 use cmp::Ordering;
 
 use crate::{extra_bits::fill, ui::ansi};
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct Resources {
     curr: Vec<u64>,    //The amount of resources here
     surplus: Vec<i64>, //The current amount increases (or decreases) by this much each tick.
@@ -266,7 +266,7 @@ impl Resources {
     } //Basic functions; self-explanatory
 }
 
-#[derive(Clone, Debug, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct ResourceID {
     id: usize,
 } //Resource identification wrapper; to make code cleaner
@@ -278,7 +278,7 @@ impl ResourceID {
         self.id
     } //basic get function
 }
-#[derive(Clone, Debug)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct ResourceDict {
     names: Vec<String>,
     transfer_costs: Vec<u64>,
