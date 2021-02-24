@@ -1,5 +1,8 @@
 use rand::{self, random}; //Random stuff
-pub fn rand_round<T, P>(input: f64, mut cvt:P) -> T where T:Copy, P:FnMut(f64) -> T{
+pub fn rand_round<T, P>(input: f64, mut cvt: P) -> T
+where
+    T: Copy,
+    P: FnMut(f64) -> T, {
     if input % 1.0 < random() {
         cvt(input.floor())
     } else {

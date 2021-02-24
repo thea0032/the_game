@@ -20,6 +20,7 @@ mod recipe;
 pub mod resources;
 mod select;
 mod system;
+pub mod init;
 
 use from_str::{BooleanDefNo, InBounds};
 

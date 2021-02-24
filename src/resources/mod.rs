@@ -215,7 +215,7 @@ impl Resources {
         let mut flag: bool = false; //A flag for if resources exist in this place
         x.push_str(msg); //Adds the inputted message onto the result.
         for (i, item) in a.iter().enumerate() {
-            if *item != zero && *item != max || (prev[i] != zero && prev[i] != max){
+            if *item != zero && *item != max || (prev[i] != zero && prev[i] != max) {
                 //If this resource should be displayed...
                 flag = true; //We've displayed at least one resource
                 let diff = item - prev[i]; //Calculates difference
@@ -287,6 +287,78 @@ pub struct ResourceDict {
     transfer_resource: Option<ResourceID>,
     //Growth:
 } //Resource dictionary; contains helpful information
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ReadableResourceDict {
+    names: Vec<String>,
+    transfer_costs: Vec<u64>,
+    growth: HashMap<String, f64>,
+    requirements: HashMap<String, HashMap<String, f64>>,
+    transfer_resource: Option<String>,
+}
+impl ReadableResourceDict {
+    pub fn to_usable(&self) -> Option<ResourceDict> {
+        let temp = self.growth.iter();
+        let mut growth: HashMap<ResourceID, f64> = HashMap::new();
+        for (x, y) in temp {
+            let pos = self.names.iter().position(|s| s == x)?;
+            growth.insert(ResourceID::new(pos), *y);
+        }
+        let mut requirements: HashMap<ResourceID, HashMap<ResourceID, f64>> = HashMap::new();
+        let temp = self.requirements.iter();
+        for (x, y) in temp {
+            let pos = self.names.iter().position(|s| s == x)?;
+            let mut new_y: HashMap<ResourceID, f64> = HashMap::new();
+            let temp = y.iter();
+            for (x, y) in temp {
+                let pos = self.names.iter().position(|s| s == x)?;
+                new_y.insert(ResourceID::new(pos), *y);
+            }
+            requirements.insert(ResourceID::new(pos), new_y);
+        }
+        Some(ResourceDict {
+            names: self.names.clone(),
+            transfer_costs: self.transfer_costs.clone(),
+            growth,
+            transfer_resource: match &self.transfer_resource {
+                Some(val) => {
+                    let pos = self.names.iter().position(|s| s == val)?;
+                    Some(ResourceID::new(pos))
+                }
+                None => None,
+            },
+            requirements: requirements,
+        })
+    }
+}
+impl ResourceDict {
+    pub fn to_readable(&self) -> ReadableResourceDict {
+        let temp = self.growth.iter();
+        let mut growth: HashMap<String, f64> = HashMap::new();
+        for (x, y) in temp {
+            growth.insert(self.names[x.get()].clone(), *y);
+        }
+        let mut requirements: HashMap<String, HashMap<String, f64>> = HashMap::new();
+        let temp = self.requirements.iter();
+        for (x, y) in temp {
+            let mut new_y: HashMap<String, f64> = HashMap::new();
+            let temp = y.iter();
+            for (x, y) in temp {
+                new_y.insert(self.names[x.get()].clone(), *y);
+            }
+            requirements.insert(self.names[x.get()].clone(), new_y);
+        }
+        ReadableResourceDict {
+            names: self.names.clone(),
+            transfer_costs: self.transfer_costs.clone(),
+            growth,
+            transfer_resource: match &self.transfer_resource {
+                Some(val) => Some(self.names[val.get()].clone()),
+                None => None,
+            },
+            requirements: requirements,
+        }
+    }
+}
 pub fn display_vec_one(rss: &ResourceDict, amts: &Vec<u64>, sep: &str) -> String {
     let mut res = "".to_string(); //Initializes result
     for (i, item) in amts.iter().enumerate() {

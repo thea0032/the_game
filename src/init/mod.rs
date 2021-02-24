@@ -1,18 +1,24 @@
-pub mod constants;
-
+use crate::{constants::*, save::Package};
 use std::{collections::HashMap, str::FromStr};
-use constants::*;
 
 use crate::{component::recipe::Recipe, ui::config::Config};
 use crate::{
     component::{Component, Components},
-    file::{read_folder, file_object::FileObject, FilePresets},
+    file::{file_object::FileObject, read_folder, FilePresets},
     instr::Directions,
     location::Location,
     object::Object,
     resources::{ResourceDict, ResourceID},
     systems::{system_id::SystemID, Systems},
-};pub fn sys(rss: &ResourceDict, cmp: &Components, dir: &mut Directions, file: &FileObject) -> Systems {
+};
+pub fn generate_package(f: &FileObject) -> Package {
+    let rss = rss(f);
+    let cmp = cmp(&rss, f);
+    let mut dir = Directions::new();
+    let sys = sys(&rss, &cmp, &mut dir, f);
+    Package::new(vec![rss], vec![cmp], vec![sys], vec![dir])
+}
+pub fn sys(rss: &ResourceDict, cmp: &Components, dir: &mut Directions, file: &FileObject) -> Systems {
     let mut s = Systems::new();
     if let Some(val) = file.get(SYSTEMS) {
         //If there's a systems object in the file object...
@@ -94,7 +100,7 @@ pub fn rss(file: &FileObject) -> ResourceDict {
         let _ = 1;
         panic!("No resource object was found in {:?}!", file);
     }
-    if let Some(val) = file.get(RSSMOD){
+    if let Some(val) = file.get(RSSMOD) {
         let temp = rss_mod(val, &names);
         ResourceDict::new(names, transfer_costs, temp.0, temp.1, temp.2)
     } else {
@@ -102,19 +108,24 @@ pub fn rss(file: &FileObject) -> ResourceDict {
     }
 }
 pub fn rss_mod(
-    file: &FileObject, names: &Vec<String>
+    file: &FileObject, names: &Vec<String>,
 ) -> (
     HashMap<ResourceID, f64>,
     HashMap<ResourceID, HashMap<ResourceID, f64>>,
     Option<ResourceID>,
 ) {
-    let mut res1:HashMap<ResourceID, f64> = HashMap::new();
-    let mut res2:HashMap<ResourceID, HashMap<ResourceID, f64>> = HashMap::new();
-    let mut res3:Option<ResourceID> = None;
-    for (name, line) in file.grab_contents(){
-        let idpos = ResourceID::new(names.iter().position(|x| x == name).expect(&format!("{:?} is not inside the resource dictionary!", name)));
-        if let Some(val) = line.get(REQUIRES){
-            let mut intermediate:HashMap<ResourceID, f64> = HashMap::new();
+    let mut res1: HashMap<ResourceID, f64> = HashMap::new();
+    let mut res2: HashMap<ResourceID, HashMap<ResourceID, f64>> = HashMap::new();
+    let mut res3: Option<ResourceID> = None;
+    for (name, line) in file.grab_contents() {
+        let idpos = ResourceID::new(
+            names
+                .iter()
+                .position(|x| x == name)
+                .expect(&format!("{:?} is not inside the resource dictionary!", name)),
+        );
+        if let Some(val) = line.get(REQUIRES) {
+            let mut intermediate: HashMap<ResourceID, f64> = HashMap::new();
             for (name, new) in val.grab_contents() {
                 if let Some(resource) = names.iter().position(|x| x == name) {
                     intermediate.insert(ResourceID::new(resource), parse(new, f64::MAX));
@@ -124,11 +135,11 @@ pub fn rss_mod(
             }
             res2.insert(idpos, intermediate);
         }
-        if let Some(val) = line.get(GROWTH){
+        if let Some(val) = line.get(GROWTH) {
             res1.insert(idpos, parse(val, f64::MAX));
         }
-        if let Some(_) = line.get(TRANSFER){
-            if res3.is_none(){
+        if let Some(_) = line.get(TRANSFER) {
+            if res3.is_none() {
                 res3 = Some(idpos);
             } else {
                 panic!("Only one resource can be used as transfer currency!");
@@ -160,10 +171,10 @@ pub fn cmp(rss: &ResourceDict, file: &FileObject) -> Components {
         }
     }
     if let Some(val) = file.get(RECIPE) {
-        for (name, val) in val.grab_contents(){
+        for (name, val) in val.grab_contents() {
             r_names.push(name.clone());
             let mut recipe = Recipe::new(rss.len());
-            for (name, val) in val.grab_contents(){
+            for (name, val) in val.grab_contents() {
                 let resource = rss.find(name).expect(&format!("Couldn't find {} in resources!", name));
                 let amt = parse(val, i64::MAX);
                 recipe.cost()[resource.get()] = amt;
@@ -233,16 +244,11 @@ where
         panic!("{:?} cannot be parsed!", obj.name());
     }
 }
-pub fn dir() -> Directions {
-    Directions::new()
-}
-pub fn config(presets: FilePresets) -> Config {
-    Config::setup(presets)
-}
-pub fn load(presets: FilePresets, paths: Vec<&str>) -> FileObject {
+pub fn load(paths: Vec<&str>) -> FileObject {
     let mut res: FileObject = FileObject::blank(String::new()); //initializes the result
     for line in paths {
-        let v = read_folder(&presets, line); //Reads the folder
+        println!("PATH: {}", line);
+        let v = read_folder(line); //Reads the folder
         for line in v {
             //For every file in the folder...
             res.merge(FileObject::read_from(line, String::new(), 0)); //Merges the contents

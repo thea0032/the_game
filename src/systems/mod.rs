@@ -1,4 +1,3 @@
-
 pub mod object_id;
 pub mod system_id;
 pub mod tick;
@@ -39,8 +38,8 @@ impl Systems {
         dir.add_new(); //Adds a new set of directions for the object
         let temp = self.objects.len() - 1; //Part 1 of 2
         self.get_system_mut(sys).add_obj(ObjectID::new(temp)); //Marks that the object
-                                                      // is inside the correct
-                                                      // system
+                                                               // is inside the correct
+                                                               // system
         ObjectID::new(temp) //Returns the object
     } //Adds an object to the list
     pub fn get_system_mut(&mut self, sys: SystemID) -> &mut System {

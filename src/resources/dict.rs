@@ -37,13 +37,13 @@ impl ResourceDict {
     pub fn find(&self, name: &str) -> Option<ResourceID> {
         Some(ResourceID::new(self.names.iter().position(|x| x == name)?))
     }
-    pub fn get_growth(&self) -> &HashMap<ResourceID, f64>{
+    pub fn get_growth(&self) -> &HashMap<ResourceID, f64> {
         &self.growth
     }
-    pub fn get_requirements(&self) -> &HashMap<ResourceID, HashMap<ResourceID, f64>>{
+    pub fn get_requirements(&self) -> &HashMap<ResourceID, HashMap<ResourceID, f64>> {
         &self.requirements
     }
-    pub fn get_transfer(&self) -> Option<ResourceID>{
+    pub fn get_transfer(&self) -> Option<ResourceID> {
         self.transfer_resource
     }
 }

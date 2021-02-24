@@ -17,9 +17,7 @@ pub fn detail(rss: &ResourceDict, cmp: &Components, cfg: &mut Config) {
     let temp = select_component_unfiltered(cmp, cfg);
     if let Some(val) = temp {
         cmp.display_one(rss, val);
-        if let MenuRes::Copy(v) =
-            get_from_input::<MenuRes>("Press q to continue (you can also copy): ", "Please enter a valid input! Try q.", cfg)
-        {
+        if let MenuRes::Copy(v) = get_from_input::<MenuRes>("Press q to continue (you can also copy): ", "Please enter a valid input! Try q.", cfg) {
             *(cfg.clipboard(v)) = Clipboard::Component(val)
         }
     } else {

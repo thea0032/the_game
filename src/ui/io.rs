@@ -1,4 +1,7 @@
-use std::{io::{stdin, stdout, Write}, str::FromStr};
+use std::{
+    io::{stdin, stdout, Write},
+    str::FromStr,
+};
 
 use super::from_str::FromString;
 
@@ -41,10 +44,12 @@ pub fn get_str_raw(msg: &str) -> String {
     }
     s
 }
-pub fn get_raw<T>(msg: &str) -> T where T: FromStr {
-    loop{
+pub fn get_raw<T>(msg: &str) -> T
+where
+    T: FromStr, {
+    loop {
         if let Ok(val) = T::from_str(&get_str_raw(msg)) {
-            break val
+            break val;
         }
     }
 }

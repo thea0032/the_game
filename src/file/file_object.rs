@@ -1,6 +1,5 @@
 use std::{iter::Zip, slice::Iter};
 
-
 const WHITESPACE: &str = "    ";
 const WHITESPACE_LEN: usize = 4;
 #[derive(Clone, Debug, PartialEq)]
@@ -10,13 +9,13 @@ pub struct FileObject {
     names: Vec<String>,
 }
 impl FileObject {
-    pub fn insert(&mut self, name: &str, contents:  FileObject) {
+    pub fn insert(&mut self, name: &str, contents: FileObject) {
         self.merge(FileObject::construct(String::new(), vec![contents], vec![name.to_string()]));
     }
     pub fn construct(name: String, contents: Vec<FileObject>, names: Vec<String>) -> FileObject {
-        FileObject {name, contents, names}
+        FileObject { name, contents, names }
     }
-    pub fn read_from(file: Vec<String>, name: String, tabs:usize) -> FileObject {
+    pub fn read_from(file: Vec<String>, name: String, tabs: usize) -> FileObject {
         let mut contents: Vec<FileObject> = Vec::new();
         let mut names: Vec<String> = Vec::new();
         let mut buffer: Vec<String> = Vec::new();
@@ -73,11 +72,11 @@ impl FileObject {
         None
     }
     pub fn f_get(&mut self, name: &str) -> &FileObject {
-            if self.get(name).is_none() {
-                self.contents.push(FileObject::blank(name.to_string()));
-                self.names.push(name.to_string());
-            }
-            self.get(name).expect("Doesn't happen")
+        if self.get(name).is_none() {
+            self.contents.push(FileObject::blank(name.to_string()));
+            self.names.push(name.to_string());
+        }
+        self.get(name).expect("Doesn't happen")
     }
     pub fn get_mut(&mut self, name: &str) -> Option<&mut FileObject> {
         for (i, line) in self.names.iter().enumerate() {
@@ -102,8 +101,8 @@ impl FileObject {
         &self.name
     }
 
-    pub fn as_string(&self) ->String {
-        let mut res:String = "".to_string();
+    pub fn as_string(&self) -> String {
+        let mut res: String = "".to_string();
         res.push_str(&self.name);
         res.push('\n');
         for (name, line) in self.grab_contents() {
@@ -113,9 +112,9 @@ impl FileObject {
         return res;
     }
     pub fn as_string_core(&self, spaces: usize) -> String {
-        let mut res:String = "".to_string();
+        let mut res: String = "".to_string();
         for (name, line) in self.grab_contents() {
-            for i in 0..=spaces{
+            for i in 0..=spaces {
                 res.push_str(WHITESPACE);
             }
             res.push_str(&format!("{}:{}\n", name, line.as_string_core(spaces + 1)));

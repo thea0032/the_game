@@ -53,9 +53,7 @@ pub fn system_menu_context(ctx: &mut Vec<String>, dis: &mut Vec<bool>, cfg: &Con
     cfg.update_context(Config::DELETE, None, ctx, dis);
     cfg.update_context(Config::NEW, Some("new object".to_string()), ctx, dis);
 }
-pub fn paste_object(
-    rss: &ResourceDict, cmp: &Components, sys: &mut Systems, system: SystemID, dir: &mut Directions, cfg: &mut Config, t: &Template,
-) {
+pub fn paste_object(rss: &ResourceDict, cmp: &Components, sys: &mut Systems, system: SystemID, dir: &mut Directions, cfg: &mut Config, t: &Template) {
     println!("Enter the source object:");
     let o = get_object(sys, system, cfg);
     if let Some(source) = o {

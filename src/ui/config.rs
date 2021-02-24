@@ -1,10 +1,12 @@
-use std::{fs::File, io::{stdin, stdout, Write}, str::FromStr};
-
-
+use std::{
+    fs::File,
+    io::{stdin, stdout, Write},
+    str::FromStr,
+};
 
 use crate::{extra_bits, file::FilePresets};
 
-use super::{clipboard::Clipboard};
+use super::clipboard::Clipboard;
 use super::defaults;
 
 const PATH: &str = "stuff";
@@ -30,7 +32,7 @@ impl Config {
     pub const PASTE: usize = 7;
     pub const INFO: usize = 8;
     pub const FUNCTIONS: &'static [&'static str] = &["quit", "tick", "delete", "new", "help", "separate", "copy", "paste", "information"]; //Constants that correspond to keys and give data
-    pub fn setup(presets: FilePresets) -> Config {
+    pub fn new(presets: &FilePresets) -> Config {
         println!("You will now be prompted to configure how inputting works."); //We configure how inputting works:
         let playing: bool = get_from_input_raw("Configuration: Do you want to play what was recorded?", "Please enter true or false."); //If we're playing some input
         let recording: bool = if !playing {

@@ -1,9 +1,9 @@
-use serde::{Deserialize, Serialize};
 use crate::{
     location::Location,
     systems::{object_id::ObjectID, Systems},
     ui::ansi,
 };
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct System {

@@ -1,5 +1,7 @@
-
-use crate::{resources::ResourceDict, systems::{object_id::ObjectID, Systems}};
+use crate::{
+    resources::ResourceDict,
+    systems::{object_id::ObjectID, Systems},
+};
 
 #[derive(Clone, Debug)]
 pub struct Template {
@@ -33,7 +35,7 @@ impl Template {
         match self.transfer_cost {
             Some(val) => {
                 let mut real_cost: Vec<i64> = self.cost().clone();
-                if let Some(id) = rss.get_transfer(){
+                if let Some(id) = rss.get_transfer() {
                     real_cost[id.get()] += val as i64;
                 }
                 if sys.get_object_mut(orig).resources_mut().spend(&real_cost) {

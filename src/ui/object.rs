@@ -52,9 +52,9 @@ pub fn object_menu(rss: &ResourceDict, cmp: &Components, sys: &mut Systems, obj:
         match response {
             MenuRes::Tick => sys.tick(rss, cmp, dir),                                           //Advance 1 tick
             MenuRes::Exit => break,                                                             //Break out of menu
-            MenuRes::New => add_component(cmp, sys.get_object_mut(obj), cfg),                            //Add component
-            MenuRes::Del => remove_component(cmp, sys.get_object_mut(obj), cfg),                         //Remove component
-            MenuRes::Enter(0) => perform_recipe(cmp, sys.get_object_mut(obj), cfg),              //Perform recipe
+            MenuRes::New => add_component(cmp, sys.get_object_mut(obj), cfg),                   //Add component
+            MenuRes::Del => remove_component(cmp, sys.get_object_mut(obj), cfg),                //Remove component
+            MenuRes::Enter(0) => perform_recipe(cmp, sys.get_object_mut(obj), cfg),             //Perform recipe
             MenuRes::Enter(1) => transfer(rss, sys, obj, cfg),                                  //Transfer resources
             MenuRes::Enter(2) => instrs::instrs_menu(sys, obj, cmp, rss, dir.instrs(obj), cfg), /* Enter instructions menu */
             MenuRes::Enter(3) => quickie(rss, cmp, sys, dir.quickie(obj), obj, cfg),            /* Enter quick */
@@ -62,7 +62,8 @@ pub fn object_menu(rss: &ResourceDict, cmp: &Components, sys: &mut Systems, obj:
             // menu
             MenuRes::Copy(val) => {
                 wait_for_input("Object copied!", cfg);
-                *cfg.clipboard(val) = Clipboard::Template(sys.get_object_mut(obj).to_template(cmp, rss, "pasted template".to_string()))},
+                *cfg.clipboard(val) = Clipboard::Template(sys.get_object_mut(obj).to_template(cmp, rss, "pasted template".to_string()))
+            }
             MenuRes::Paste(val) => {
                 match cfg.clipboard(val) {
                     Clipboard::Template(val) => {
@@ -71,7 +72,7 @@ pub fn object_menu(rss: &ResourceDict, cmp: &Components, sys: &mut Systems, obj:
                         } else {
                             wait_for_input(&format!("{}Object paste failed!", ansi::GREEN), cfg);
                         }
-                    },
+                    }
                     Clipboard::Instrs(val) => {
                         for line in val.get_queues() {
                             dir.instrs(obj).add(line.clone(), "pasted queue".to_string());
@@ -97,7 +98,7 @@ pub fn object_menu(rss: &ResourceDict, cmp: &Components, sys: &mut Systems, obj:
                         wait_for_input(&format!("{}You can't paste that there!", ansi::RED), cfg);
                     }
                 };
-            },
+            }
             MenuRes::Info => {
                 information(rss, cmp, cfg);
             }
@@ -115,8 +116,8 @@ pub fn object_menu_context(ctx: &mut Vec<String>, dis: &mut Vec<bool>, cfg: &Con
 pub fn transfer(rss: &ResourceDict, sys: &mut Systems, obj: ObjectID, cfg: &mut Config) {
     let temp = sys.get_object_mut(obj).resources().get_currs().clone(); //Gets current resources
     let mut max = temp.iter(); //Gets maximum resources
-    let total_cap:Vec<u64>;
-    if let Some(val) = rss.get_transfer(){
+    let total_cap: Vec<u64>;
+    if let Some(val) = rss.get_transfer() {
         let transfer_cap = sys.get_object_mut(obj).resources().get_curr(val); //Gets transfer capacity
         total_cap = resources::get_transfer_max(rss, transfer_cap)
             .into_iter()
@@ -130,7 +131,7 @@ pub fn transfer(rss: &ResourceDict, sys: &mut Systems, obj: ObjectID, cfg: &mut 
             })
             .collect(); //Gets maximum transferrable
     } else {
-        total_cap = temp;//No transfer resource
+        total_cap = temp; //No transfer resource
     }
     let temp = get_resource_filtered(rss, &total_cap, cfg); //Gets the resource to transfer
     let resource;
@@ -160,7 +161,7 @@ pub fn transfer(rss: &ResourceDict, sys: &mut Systems, obj: ObjectID, cfg: &mut 
         wait_for_input("Press enter to continue:", cfg);
         return;
     }
-    if let Some(val) = rss.get_transfer(){
+    if let Some(val) = rss.get_transfer() {
         if !sys
             .get_object_mut(obj)
             .resources_mut()
